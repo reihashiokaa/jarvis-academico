@@ -1,0 +1,240 @@
+COMANDOS PARA TESTAR AS FUNÇÕES MAIN E DE CONSULTA DE TAREFAS
+
+Observação:
+Rode os comandos no terminal do VS Code, dentro da pasta principal do projeto:
+
+jarvis-academico
+
+Se possível, ative antes o ambiente virtual.
+
+No CMD:
+.venv\Scripts\activate
+
+No PowerShell:
+.\.venv\Scripts\Activate.ps1
+
+
+============================================================
+1. TESTAR O CHAT PRINCIPAL COM O GEMMA
+============================================================
+
+Essa função testa o chat principal do projeto.
+
+Ela verifica se o arquivo src/main.py consegue:
+
+- iniciar o JARVIS;
+- receber uma mensagem digitada pelo usuário;
+- chamar a LLM;
+- mostrar a resposta no terminal.
+
+Comando:
+
+python src/main.py
+
+Depois digite no chat:
+
+Olá, quem é você?
+
+Para sair, digite:
+
+sair
+
+============================================================
+02. TESTAR A FUNÇÃO carregar_tarefas()
+============================================================
+
+Essa função carrega tudo que está no arquivo data/tarefas.json.
+
+Ela é uma função intermediária.
+
+Isso significa que ela ainda não devolve uma resposta bonita para o usuário.
+Ela apenas abre o arquivo de tarefas, lê o conteúdo e retorna os dados em formato bruto.
+
+Comando simples:
+
+python -c "from src.tarefas import carregar_tarefas; print(carregar_tarefas())"
+
+============================================================
+03. TESTAR A FUNÇÃO salvar_tarefas()
+============================================================
+
+Essa função recebe uma lista de tarefas e grava essa lista no arquivo data/tarefas.json.
+
+Ela é uma função intermediária.
+
+Isso significa que ela ajuda o sistema por dentro, mas não será chamada diretamente pelo usuário final.
+
+Este teste cria uma tarefa de exemplo, salva no arquivo tarefas.json e depois carrega o arquivo novamente para verificar se a gravação funcionou.
+
+Atenção:
+Depois deste teste, o arquivo data/tarefas.json GUARDA UMA NOVA TAREFA!
+
+Comando:
+
+python -c "from src.tarefas import salvar_tarefas, carregar_tarefas; tarefas = [{'id': 1, 'titulo': 'Estudar RAG', 'descricao': 'Revisar chunking e embeddings', 'concluida': False}]; salvar_tarefas(tarefas); print(carregar_tarefas())"
+
+============================================================
+04. TESTAR A FUNÇÃO recuperar_proximo_id()
+============================================================
+
+Essa função recebe uma lista de tarefas e descobre qual deve ser o próximo id disponível.
+
+Ela é uma função intermediária.
+
+Isso significa que ela ajuda o sistema por dentro, mas não será chamada diretamente pelo usuário final.
+
+A lógica esperada é:
+
+- se a lista estiver vazia, o próximo id deve ser 1;
+- se já existirem tarefas, o próximo id deve ser o maior id existente + 1.
+
+Comando para testar com a lista atual de tarefas:
+
+python -c "from src.tarefas import carregar_tarefas, recuperar_proximo_id; tarefas = carregar_tarefas(); print(recuperar_proximo_id(tarefas))"
+
+============================================================
+05. TESTAR A FUNÇÃO formatar_tarefas()
+============================================================
+
+Essa função recebe uma lista de tarefas e devolve um texto formatado, mais fácil de ler.
+
+Ela é uma função intermediária.
+
+Isso significa que ela ajuda o sistema por dentro, mas não será chamada diretamente pelo usuário final.
+
+Ela transforma uma lista bruta como:
+
+[{'id': 1, 'titulo': 'Estudar RAG', 'descricao': 'Revisar chunking e embeddings', 'concluida': False}]
+
+em uma resposta mais legível, como:
+
+Você tem 1 tarefa(s) cadastrada(s):
+
+- [1] Estudar RAG | pendente
+  Revisar chunking e embeddings
+
+Comando:
+
+python -c "from src.tarefas import carregar_tarefas, formatar_tarefas; tarefas = carregar_tarefas(); print(formatar_tarefas(tarefas))"
+
+============================================================
+06. TESTAR A FUNÇÃO consultar_tarefas()
+============================================================
+
+Essa função consulta todas as tarefas cadastradas e devolve uma resposta formatada para o usuário.
+
+Ela é uma função FINAL.
+
+Isso significa que ela poderá ser usada futuramente como ferramenta no tool calling.
+
+Ela junta duas etapas:
+
+1. carregar_tarefas()
+   lê o arquivo data/tarefas.json e retorna a lista bruta de tarefas.
+
+2. formatar_tarefas()
+   transforma a lista bruta em um texto mais fácil de ler.
+
+Comando:
+
+python -c "from src.tarefas import consultar_tarefas; print(consultar_tarefas())"
+
+============================================================
+07. TESTAR A FUNÇÃO montar_nova_tarefa()
+============================================================
+
+Essa função recebe os dados de uma tarefa e monta um dicionário Python no formato usado pelo arquivo data/tarefas.json.
+
+Ela é uma função intermediária.
+
+Isso significa que ela ajuda o sistema por dentro, mas não será chamada diretamente pelo usuário final.
+
+Ela ainda não salva a tarefa no arquivo.
+Ela apenas monta a estrutura da tarefa em formato bruto.
+
+Comando:
+
+python -c "from src.tarefas import montar_nova_tarefa; print(montar_nova_tarefa(2, 'Fazer README', 'Escrever instruções básicas do projeto'))"
+
+============================================================
+08. TESTAR A FUNÇÃO adicionar_tarefa()
+============================================================
+
+Essa função adiciona uma nova tarefa ao arquivo data/tarefas.json.
+
+Ela é uma função FINAL.
+
+Isso significa que ela poderá ser usada futuramente como ferramenta no tool calling.
+
+A função faz o processo completo:
+
+1. carrega as tarefas existentes;
+2. recupera o próximo id disponível;
+3. monta a nova tarefa;
+4. adiciona a tarefa na lista;
+5. salva a lista atualizada no arquivo;
+6. devolve uma mensagem de confirmação.
+
+Atenção:
+Este teste MODIFICA o arquivo data/tarefas.json.
+Se o comando for rodado mais de uma vez com os mesmos dados, ele criará novas tarefas repetidas, mas cada uma com um id diferente.
+
+Comando:
+
+python -c "from src.tarefas import adicionar_tarefa, consultar_tarefas; print(adicionar_tarefa('Fazer README', 'Escrever as instruções básicas do projeto')); print(); print(consultar_tarefas())"
+
+============================================================
+09. TESTAR A FUNÇÃO recuperar_tarefa_por_id()
+============================================================
+
+Essa função recebe uma lista de tarefas e um id, procura a tarefa correspondente e devolve a tarefa em formato bruto.
+
+Ela é uma função intermediária.
+
+Isso significa que ela ajuda o sistema por dentro, mas não será chamada diretamente pelo usuário final.
+
+Ela será importante para a função concluir_tarefa(), porque antes de marcar uma tarefa como concluída, o sistema precisa encontrar qual tarefa tem o id informado.
+
+Comando para testar com uma tarefa existente:
+
+python -c "from src.tarefas import carregar_tarefas, recuperar_tarefa_por_id; tarefas = carregar_tarefas(); print(recuperar_tarefa_por_id(tarefas, 2))"
+
+Comando para testar com uma tarefa inexistente:
+
+python -c "from src.tarefas import carregar_tarefas, recuperar_tarefa_por_id; tarefas = carregar_tarefas(); print(recuperar_tarefa_por_id(tarefas, 999))"
+
+============================================================
+10. TESTAR A FUNÇÃO concluir_tarefa()
+============================================================
+
+Essa função marca uma tarefa como concluída no arquivo data/tarefas.json.
+
+Ela é uma função FINAL.
+
+Isso significa que ela poderá ser usada futuramente como ferramenta no tool calling.
+
+A função faz o processo completo:
+
+1. carrega todas as tarefas cadastradas;
+2. recupera a tarefa pelo id informado;
+3. verifica se a tarefa existe;
+4. verifica se ela já está concluída;
+5. altera o campo "concluida" para True;
+6. salva a lista atualizada no arquivo;
+7. devolve uma mensagem de confirmação.
+
+Atenção:
+Este teste MODIFICA o arquivo data/tarefas.json.
+Depois de rodar, a tarefa escolhida ficará marcada como concluída.
+
+Comando para concluir uma tarefa existente:
+
+python -c "from src.tarefas import concluir_tarefa, consultar_tarefas; print(concluir_tarefa(2)); print(); print(consultar_tarefas())"
+
+Comando para tentar concluir uma tarefa inexistente:
+
+python -c "from src.tarefas import concluir_tarefa; print(concluir_tarefa(999))"
+
+Comando para testar uma tarefa que já está concluída:
+
+python -c "from src.tarefas import concluir_tarefa; print(concluir_tarefa(2))"

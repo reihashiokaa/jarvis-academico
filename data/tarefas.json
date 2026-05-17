@@ -1,0 +1,26 @@
+[
+  {
+    "id": 1,
+    "titulo": "Estudar RAG",
+    "descricao": "Revisar chunking e embeddings",
+    "concluida": false
+  },
+  {
+    "id": 2,
+    "titulo": "Fazer README",
+    "descricao": "Escrever as instruções básicas do projeto",
+    "concluida": true
+  },
+  {
+    "id": 3,
+    "titulo": "Testar tools.py",
+    "descricao": "Verificar se executar_ferramenta chama adicionar_tarefa corretamente",
+    "concluida": false
+  },
+  {
+    "id": 4,
+    "titulo": "Implementar tool calling",
+    "descricao": "Realizar a integração do sistema de chamada de ferramentas",
+    "concluida": false
+  }
+]

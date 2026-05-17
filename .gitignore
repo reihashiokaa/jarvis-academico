@@ -1,0 +1,56 @@
+# ============================================================
+# Arquivo: .gitignore
+# ------------------------------------------------------------
+# Este arquivo diz ao Git quais arquivos e pastas NÃO devem
+# ser enviados para o GitHub.
+#
+# Isso é importante porque alguns arquivos são privados,
+# automáticos ou desnecessários para o repositório.
+# ============================================================
+
+
+# ------------------------------------------------------------
+# O arquivo .env guarda configurações sensíveis, como a chave
+# da API do Gemma.
+#
+# Como essa chave não deve ficar pública no GitHub, colocamos
+# .env aqui para o Git ignorar esse arquivo.
+# ------------------------------------------------------------
+.env
+
+
+# ------------------------------------------------------------
+# A pasta __pycache__ é criada automaticamente pelo Python.
+#
+# Ela guarda arquivos internos para o Python executar o código
+# mais rápido, mas não é código escrito por nós.
+#
+# Por isso, não precisamos enviar essa pasta para o GitHub.
+# ------------------------------------------------------------
+__pycache__/
+
+
+# ------------------------------------------------------------
+# Arquivos .pyc também são arquivos automáticos gerados pelo
+# Python.
+#
+# Eles não são necessários para entender, executar ou avaliar
+# o projeto.
+# ------------------------------------------------------------
+*.pyc
+
+
+# ------------------------------------------------------------
+# A pasta .venv guarda o ambiente virtual do projeto.
+#
+# Ela pode ficar grande e é recriada facilmente com:
+#
+# python -m venv .venv
+# pip install -r requirements.txt
+#
+# Por isso, também não deve ir para o GitHub.
+# ------------------------------------------------------------
+.venv/
+
+# Logs gerados durante execução/testes
+logs/*.jsonl

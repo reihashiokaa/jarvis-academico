@@ -1,0 +1,266 @@
+COMANDOS PARA TESTAR AS FUNÇÕES MAIN E DE CONSULTA DE AGENDA
+
+Observação:
+Rode os comandos no terminal do VS Code, dentro da pasta principal do projeto:
+
+jarvis-academico
+
+Se possível, ative antes o ambiente virtual.
+
+No CMD:
+.venv\Scripts\activate
+
+No PowerShell:
+.\.venv\Scripts\Activate.ps1
+
+
+============================================================
+1. TESTAR O CHAT PRINCIPAL COM O GEMMA
+============================================================
+
+Essa função testa o chat principal do projeto.
+
+Ela verifica se o arquivo src/main.py consegue:
+
+- iniciar o JARVIS;
+- receber uma mensagem digitada pelo usuário;
+- chamar a LLM;
+- mostrar a resposta no terminal.
+
+Comando:
+
+python src/main.py
+
+Depois digite no chat:
+
+Olá, quem é você?
+
+Para sair, digite:
+
+sair
+
+
+============================================================
+2. TESTAR A FUNÇÃO carregar_agenda()
+============================================================
+
+Essa função carrega tudo que está no arquivo data/agenda.json.
+
+Ela verifica se o Python consegue abrir o arquivo da agenda e transformar o conteúdo JSON em uma lista de compromissos.
+
+Comando simples:
+
+python -c "from src.agenda import carregar_agenda; print(carregar_agenda())"
+
+============================================================
+3. TESTAR A FUNÇÃO recuperar_compromissos_por_data()
+============================================================
+
+Essa função recupera compromissos de uma data específica, mas ainda retorna no formato bruto de lista.
+
+Ela é uma função intermediária.
+
+Isso significa que ela apenas pega os dados da agenda, filtra pela data escolhida e devolve uma lista de compromissos encontrados.
+
+Comando para uma data com compromisso:
+
+python -c "from src.agenda import recuperar_compromissos_por_data; print(recuperar_compromissos_por_data('2026-05-15'))"
+
+Comando para uma data sem compromisso:
+
+python -c "from src.agenda import recuperar_compromissos_por_data; print(recuperar_compromissos_por_data('2026-05-16'))"
+
+
+============================================================
+4. TESTAR A FUNÇÃO formatar_compromissos_por_data()
+============================================================
+
+Essa função transforma a lista de compromissos de uma data específica em um texto mais bonito.
+
+Ela deve ser usada depois da função recuperar_compromissos_por_data(), que recupera os compromissos daquela data.
+
+Esse teste verifica se o sistema consegue pegar os dados brutos da agenda e transformar em uma resposta legível para o usuário.
+
+Comando:
+
+python -c "from src.agenda import recuperar_compromissos_por_data, formatar_compromissos_por_data; compromissos = recuperar_compromissos_por_data('2026-05-15'); print(formatar_compromissos_por_data(compromissos, '2026-05-15'))"
+
+
+============================================================
+5. TESTAR A FUNÇÃO consultar_agenda_por_data()
+============================================================
+
+Essa função já recupera os compromissos de uma data específica e devolve a resposta formatada.
+
+Ela junta duas etapas:
+
+1. recuperar_compromissos_por_data()
+   recupera os compromissos daquela data.
+
+2. formatar_compromissos_por_data()
+   transforma a lista encontrada em uma resposta bonita.
+
+Comando para uma data com compromisso:
+
+python -c "from src.agenda import consultar_agenda_por_data; print(consultar_agenda_por_data('2026-05-15'))"
+
+Comando para uma data sem compromisso:
+
+python -c "from src.agenda import consultar_agenda_por_data; print(consultar_agenda_por_data('2026-05-16'))"
+
+
+============================================================
+6. TESTAR A FUNÇÃO obter_data_hoje()
+============================================================
+
+Essa função pega a data atual do computador no formato AAAA-MM-DD.
+
+Ela é importante porque permite transformar perguntas como "o que tenho hoje?" em uma data concreta que pode ser consultada na agenda.
+
+Comando:
+
+python -c "from src.agenda import obter_data_hoje; print(obter_data_hoje())"
+
+
+============================================================
+7. TESTAR A FUNÇÃO consultar_agenda_hoje()
+============================================================
+
+Essa função consulta automaticamente os compromissos da data de hoje.
+
+Ela junta duas etapas:
+
+1. obter_data_hoje()
+   descobre a data atual do computador.
+
+2. consultar_agenda_por_data()
+   consulta os compromissos dessa data e devolve a resposta formatada.
+
+Comando:
+
+python -c "from src.agenda import consultar_agenda_hoje; print(consultar_agenda_hoje())"
+
+
+============================================================
+8. TESTAR A FUNÇÃO obter_data_amanha()
+============================================================
+
+Essa função calcula a data de amanhã no formato AAAA-MM-DD.
+
+Ela é importante porque permite transformar perguntas como "tenho algo amanhã?" em uma data concreta que pode ser consultada na agenda.
+
+Comando:
+
+python -c "from src.agenda import obter_data_amanha; print(obter_data_amanha())"
+
+
+============================================================
+9. TESTAR A FUNÇÃO consultar_agenda_amanha()
+============================================================
+
+Essa função consulta automaticamente os compromissos de amanhã.
+
+Ela junta duas etapas:
+
+1. obter_data_amanha()
+   calcula a data de amanhã.
+
+2. consultar_agenda_por_data()
+   consulta os compromissos dessa data e devolve a resposta formatada.
+
+Comando:
+
+python -c "from src.agenda import consultar_agenda_amanha; print(consultar_agenda_amanha())"
+
+
+============================================================
+10. TESTAR DIRETAMENTE A FUNÇÃO chamar_llm()
+============================================================
+
+Essa função manda uma mensagem diretamente para o Gemma, sem abrir o chat principal.
+
+Ela verifica se o arquivo src/llm_client.py consegue chamar a LLM e receber uma resposta.
+
+Comando:
+
+python -c "from src.llm_client import chamar_llm; print(chamar_llm('Responda apenas: teste funcionando'))"
+
+
+============================================================
+11. TESTAR A FUNÇÃO obter_datas_da_semana_atual()
+============================================================
+
+Essa função calcula as 7 datas da semana atual, considerando a semana de segunda-feira até domingo.
+
+Ela é importante porque serve de base para consultar compromissos da semana.
+
+Comando:
+
+python -c "from src.agenda import obter_datas_da_semana_atual; print(obter_datas_da_semana_atual())"
+
+
+============================================================
+12. TESTAR A FUNÇÃO recuperar_compromissos_da_semana_atual()
+============================================================
+
+Essa função recupera todos os compromissos cadastrados dentro da semana atual, mas ainda retorna no formato bruto de lista.
+
+Ela usa a função obter_datas_da_semana_atual() para descobrir quais datas fazem parte da semana e depois filtra os compromissos da agenda.
+
+Comando:
+
+python -c "from src.agenda import recuperar_compromissos_da_semana_atual; print(recuperar_compromissos_da_semana_atual())"
+
+
+============================================================
+13. TESTAR A FUNÇÃO formatar_compromissos_da_semana()
+============================================================
+
+Essa função transforma a lista de compromissos da semana em um texto mais bonito e mais fácil de ler.
+
+Ela deve ser usada depois da função recuperar_compromissos_da_semana_atual(), que recupera os compromissos da semana.
+
+Comando:
+
+python -c "from src.agenda import recuperar_compromissos_da_semana_atual, formatar_compromissos_da_semana; compromissos = recuperar_compromissos_da_semana_atual(); print(formatar_compromissos_da_semana(compromissos))"
+
+
+============================================================
+14. TESTAR A FUNÇÃO consultar_agenda_semana_atual()
+============================================================
+
+Essa função consulta automaticamente os compromissos da semana atual e já devolve uma resposta formatada.
+
+Ela junta duas etapas:
+
+1. recuperar_compromissos_da_semana_atual()
+   recupera os compromissos cadastrados dentro da semana atual.
+
+2. formatar_compromissos_da_semana()
+   transforma a lista encontrada em um texto mais bonito.
+
+Comando:
+
+python -c "from src.agenda import consultar_agenda_semana_atual; print(consultar_agenda_semana_atual())"
+
+
+============================================================
+RESUMO DO QUE ESSES TESTES VERIFICAM
+============================================================
+
+Se todos esses comandos funcionarem, então até agora o projeto já tem:
+
+- Gemma respondendo;
+- chat principal funcionando;
+- agenda sendo carregada;
+- recuperação de compromissos por data;
+- formatação de compromissos por data;
+- consulta formatada da agenda por data;
+- obtenção automática da data de hoje;
+- consulta automática da agenda de hoje;
+- obtenção automática da data de amanhã;
+- consulta automática da agenda de amanhã;
+- obtenção das datas da semana atual;
+- recuperação de compromissos da semana atual;
+- formatação de compromissos da semana;
+- consulta automática de agenda da semana.

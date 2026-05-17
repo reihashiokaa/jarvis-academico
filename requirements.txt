@@ -1,0 +1,29 @@
+# ============================================================
+# Arquivo: requirements.txt
+# ------------------------------------------------------------
+# Este arquivo lista as bibliotecas Python que o projeto usa.
+#
+# Quando alguém quiser instalar as dependências do projeto,
+# basta rodar:
+#
+# pip install -r requirements.txt
+# ============================================================
+
+
+# ------------------------------------------------------------
+# Biblioteca usada para conversar com APIs no formato compatível
+# com OpenAI.
+#
+# No nosso caso, mesmo usando o Gemma 12B, a API fornecida pelo
+# professor pode ser acessada usando esse cliente.
+# ------------------------------------------------------------
+openai
+
+
+# ------------------------------------------------------------
+# Biblioteca usada para carregar variáveis do arquivo .env.
+#
+# Isso permite guardar informações como chave da API e nome do
+# modelo fora do código Python.
+# ------------------------------------------------------------
+python-dotenv
