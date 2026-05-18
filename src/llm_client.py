@@ -68,7 +68,7 @@ from dotenv import load_dotenv
 # Pense nesse cliente como uma ferramenta pronta para conversar
 # com modelos de linguagem por API.
 # ------------------------------------------------------------
-from openai import OpenAI
+from openai import OpenAI, APITimeoutError, APIConnectionError, APIError
 
 
 # ------------------------------------------------------------
@@ -145,121 +145,163 @@ client = OpenAI(
     # diretamente no código-fonte, principalmente porque o código
     # será enviado para o GitHub.
     # --------------------------------------------------------
-    api_key=os.getenv("GEMMA_API_KEY")
+    api_key=os.getenv("GEMMA_API_KEY"),
+
+    # --------------------------------------------------------
+    # Aqui definimos um timeout padrão para as requisições.
+    # O timeout é o tempo máximo que o client vai esperar por uma resposta
+    # antes de desistir e lançar um erro.
+    # Definir um timeout é importante para evitar que o sistema fique travado esperando uma resposta que pode nunca chegar.
+    # O valor de 10 segundos é um exemplo, mas pode ser ajustado conforme necessário.
+    # ---------------------------------------------------------
+    timeout=10
 )
 #endregion
 
-#region função para chamar a LLM
+#region chamar_llm (intermediária, envia mensagem para a LLM e retorna resposta em texto)
 
 # ------------------------------------------------------------
 # Função: chamar_llm
 # ------------------------------------------------------------
-# Esta função é responsável por enviar uma mensagem para a LLM
-# e devolver a resposta gerada pelo modelo.
+# Esta função envia uma mensagem para a LLM e devolve a resposta
+# gerada pelo modelo.
 #
-# - ela recebe uma entrada;
-# - processa essa entrada;
-# - devolve uma saída.
+# Esta é uma função intermediária.
 #
-# Neste caso:
+# Isso significa que ela ajuda o sistema por dentro, mas não é uma
+# ferramenta chamada diretamente pelo usuário final.
 #
-# Entrada:
-#   mensagem -> texto digitado pelo usuário
+# Por que precisamos tratar erros aqui?
 #
-# Saída:
-#   resposta_texto -> texto respondido pelo Gemma
+# Porque a chamada para a LLM depende de conexão com um serviço
+# externo.
+#
+# Às vezes o modelo pode demorar demais, a internet pode oscilar
+# ou a API pode falhar temporariamente.
+#
+# Antes, quando isso acontecia, o programa quebrava e mostrava um
+# erro gigante no terminal.
+#
+# Agora, vamos capturar esses erros e devolver uma mensagem mais
+# amigável para o usuário.
 # ------------------------------------------------------------
 def chamar_llm(mensagem: str) -> str:
     # --------------------------------------------------------
-    # O parâmetro "mensagem" representa o texto que o usuário
-    # digitou no chat.
+    # O parâmetro "mensagem" representa o texto que será enviado
+    # para o modelo.
     #
     # Exemplo:
     #
-    # mensagem = "Explique o que é regressão logística"
+    # "Explique rapidamente o que é uma LLM."
     #
-    # O ": str" significa que esperamos receber uma string,
-    # ou seja, um texto.
-    #
-    # O "-> str" indica que esta função deve devolver uma string
-    # como resposta.
+    # A função vai enviar essa mensagem para o Gemma e devolver
+    # o texto da resposta.
     # --------------------------------------------------------
 
     # --------------------------------------------------------
-    # Aqui fazemos a chamada para a API da LLM.
+    # Usamos try/except porque chamadas externas podem falhar.
     #
-    # O método client.chat.completions.create(...) envia uma
-    # conversa para o modelo e pede que ele gere uma resposta.
+    # O try representa:
     #
-    # Essa estrutura segue o formato de chat:
+    # "tente executar este código normalmente".
     #
-    # - temos uma lista de mensagens;
-    # - cada mensagem tem um papel, chamado "role";
-    # - cada mensagem tem um conteúdo, chamado "content".
+    # Se der certo, a resposta da LLM será retornada.
+    #
+    # Se der erro, o Python pula para algum dos except abaixo.
     # --------------------------------------------------------
-    resposta = client.chat.completions.create(
+    try:
         # ----------------------------------------------------
-        # Aqui informamos qual modelo queremos usar.
+        # Aqui fazemos a chamada real para o modelo.
         #
-        # O nome do modelo está guardado no arquivo .env:
+        # client.chat.completions.create(...)
         #
-        # GEMMA_MODEL=google/gemma-3-12b-it
+        # envia uma conversa para a LLM e pede uma resposta.
         #
-        # Usamos os.getenv("GEMMA_MODEL") para buscar esse valor
-        # sem escrever diretamente no código.
+        # model=os.getenv("GEMMA_MODEL")
+        #
+        # pega do arquivo .env o nome do modelo que estamos usando.
+        #
+        # messages=[...]
+        #
+        # representa a lista de mensagens enviadas para o modelo.
+        #
+        # Neste caso, mandamos apenas uma mensagem do usuário.
         # ----------------------------------------------------
-        model=os.getenv("GEMMA_MODEL"),
+        resposta = client.chat.completions.create(
+            model=os.getenv("GEMMA_MODEL"),
+            messages=[
+                {
+                    "role": "user",
+                    "content": mensagem
+                }
+            ]
+        )
 
         # ----------------------------------------------------
-        # Aqui montamos a lista de mensagens da conversa.
+        # A resposta da API vem dentro de uma estrutura maior.
         #
-        # Por enquanto, teremos apenas uma mensagem:
-        # a mensagem do usuário.
+        # Para pegar apenas o texto gerado pelo modelo, usamos:
         #
-        # O role "user" significa que essa mensagem veio do
-        # usuário humano.
+        # resposta.choices[0].message.content
         #
-        # O content recebe o texto da variável "mensagem".
+        # Esse é o texto final que queremos devolver para quem
+        # chamou a função.
         # ----------------------------------------------------
-        messages=[
-            {
-                "role": "user",
-                "content": mensagem
-            }
-        ]
-    )
+        texto_resposta = resposta.choices[0].message.content
 
-    # --------------------------------------------------------
-    # A resposta da API vem em uma estrutura com várias partes.
-    #
-    # Para pegar o texto principal gerado pela LLM, usamos:
-    #
-    # resposta.choices[0].message.content
-    #
-    # Explicando aos poucos:
-    #
-    # resposta
-    #   é o objeto inteiro retornado pela API.
-    #
-    # choices[0]
-    #   pega a primeira resposta gerada pelo modelo.
-    #
-    # message.content
-    #   pega o conteúdo textual dessa resposta.
-    # --------------------------------------------------------
-    resposta_texto = resposta.choices[0].message.content
+        # ----------------------------------------------------
+        # Por fim, devolvemos a resposta textual da LLM.
+        # ----------------------------------------------------
+        return texto_resposta
 
-    # --------------------------------------------------------
-    # Por fim, devolvemos o texto da resposta para quem chamou
-    # esta função.
-    #
-    # Ou seja, se outro arquivo fizer:
-    #
-    # resposta = chamar_llm("Olá")
-    #
-    # a variável "resposta" receberá o texto gerado pelo Gemma.
-    # --------------------------------------------------------
-    return resposta_texto
+    except APITimeoutError:
+        # ----------------------------------------------------
+        # Este erro acontece quando a API demora demais para
+        # responder.
+        #
+        # Foi exatamente o tipo de erro que apareceu no seu teste:
+        #
+        # Request timed out.
+        #
+        # Em vez de quebrar o programa, devolvemos uma mensagem
+        # amigável.
+        # ----------------------------------------------------
+        return (
+            "O modelo demorou demais para responder e a chamada atingiu o tempo limite. "
+            "Tente novamente em alguns instantes."
+        )
+
+    except APIConnectionError:
+        # ----------------------------------------------------
+        # Este erro acontece quando o programa não consegue se
+        # conectar corretamente ao serviço da LLM.
+        #
+        # Pode ser internet, instabilidade do serviço ou problema
+        # temporário de conexão.
+        # ----------------------------------------------------
+        return (
+            "Não consegui conectar ao serviço da LLM agora. "
+            "Verifique sua internet ou tente novamente em alguns instantes."
+        )
+
+    except APIError as erro:
+        # ----------------------------------------------------
+        # Este erro representa outros problemas vindos da API.
+        #
+        # Guardamos o erro na variável "erro" para mostrar uma
+        # mensagem útil durante o desenvolvimento.
+        # ----------------------------------------------------
+        return f"Ocorreu um erro na API da LLM: {erro}"
+
+    except Exception as erro:
+        # ----------------------------------------------------
+        # Este bloco captura qualquer outro erro inesperado.
+        #
+        # Ele serve como uma proteção final para evitar que o
+        # programa quebre sem uma mensagem controlada.
+        # ----------------------------------------------------
+        return f"Ocorreu um erro inesperado ao chamar a LLM: {erro}"
+
 #endregion
 
 #region decidir_chamada_ferramenta (intermediária, pede para a LLM decidir se deve chamar uma ferramenta)
@@ -519,62 +561,111 @@ Resposta esperada:
     # --------------------------------------------------------
     # Agora enviamos o prompt para o Gemma.
     #
-    # Usamos o mesmo client que já criamos antes neste arquivo.
+    # Como essa chamada depende de um serviço externo, ela pode
+    # falhar ou demorar demais.
     #
-    # A chamada é parecida com a função chamar_llm(), mas aqui o
-    # prompt tem uma finalidade específica:
+    # Por isso usamos try/except.
     #
-    # decidir ferramenta.
+    # Se der certo, devolvemos o texto gerado pela LLM.
+    #
+    # Se der timeout ou erro de conexão, devolvemos uma decisão
+    # segura dizendo que nenhuma ferramenta deve ser usada.
+    #
+    # Essa decisão segura será devolvida em formato JSON textual,
+    # porque esta função normalmente retorna texto.
+    #
+    # Depois, a função interpretar_decisao_ferramenta(...) vai
+    # transformar esse texto em dicionário Python.
     # --------------------------------------------------------
-    resposta = client.chat.completions.create(
-        # ----------------------------------------------------
-        # Aqui informamos qual modelo será usado.
-        #
-        # O nome do modelo está no arquivo .env.
-        # ----------------------------------------------------
-        model=os.getenv("GEMMA_MODEL"),
+    try:
+        resposta = client.chat.completions.create(
+            model=os.getenv("GEMMA_MODEL"),
+            messages=[
+                {
+                    "role": "user",
+                    "content": prompt
+                }
+            ],
+            #trecho para evitar respostas muito criativas, que podem fugir do formato JSON esperado
+            temperature=0,
+            max_tokens=250
+        )
 
         # ----------------------------------------------------
-        # Aqui enviamos a mensagem para o modelo.
+        # Pegamos o texto da resposta da LLM.
         #
-        # O role "user" está sendo usado porque estamos fazendo
-        # uma solicitação direta ao modelo.
+        # Esse texto deve ser um JSON.
         # ----------------------------------------------------
-        messages=[
+        decisao_texto = resposta.choices[0].message.content
+
+        # ----------------------------------------------------
+        # Devolvemos o texto da decisão.
+        # ----------------------------------------------------
+        return decisao_texto
+
+    except APITimeoutError:
+        # ----------------------------------------------------
+        # Se a LLM demorou demais para decidir a ferramenta,
+        # devolvemos uma decisão segura.
+        #
+        # Decisão segura:
+        #
+        # não usar ferramenta.
+        #
+        # Isso evita que o programa quebre.
+        # ----------------------------------------------------
+        return json.dumps(
             {
-                "role": "user",
-                "content": prompt
-            }
-        ]
-    )
+                "usar_ferramenta": False,
+                "nome_ferramenta": None,
+                "entrada": {}
+            },
+            ensure_ascii=False
+        )
 
-    # --------------------------------------------------------
-    # A resposta da API vem em uma estrutura com várias partes.
-    #
-    # Para pegar o texto gerado pelo Gemma, usamos:
-    #
-    # resposta.choices[0].message.content
-    #
-    # Esse texto deve ser um JSON em formato de string.
-    #
-    # Exemplo:
-    #
-    # '{"usar_ferramenta": true, "nome_ferramenta": "consultar_tarefas", "entrada": {}}'
-    # --------------------------------------------------------
-    decisao_texto = resposta.choices[0].message.content
+    except APIConnectionError:
+        # ----------------------------------------------------
+        # Se não conseguimos conectar ao serviço da LLM, também
+        # devolvemos uma decisão segura.
+        # ----------------------------------------------------
+        return json.dumps(
+            {
+                "usar_ferramenta": False,
+                "nome_ferramenta": None,
+                "entrada": {}
+            },
+            ensure_ascii=False
+        )
 
-    # --------------------------------------------------------
-    # Por enquanto, devolvemos o texto bruto da decisão.
-    #
-    # Separar em duas etapas deixa o código mais fácil de entender:
-    #
-    # 1. decidir_chamada_ferramenta()
-    #    -> pede a decisão para a LLM.
-    #
-    # 2. interpretar_decisao_ferramenta()
-    #    -> transforma a resposta em dados que o Python entende.
-    # --------------------------------------------------------
-    return decisao_texto
+    except APIError:
+        # ----------------------------------------------------
+        # Se a API respondeu com algum erro, também não tentamos
+        # chamar ferramenta.
+        # ----------------------------------------------------
+        return json.dumps(
+            {
+                "usar_ferramenta": False,
+                "nome_ferramenta": None,
+                "entrada": {}
+            },
+            ensure_ascii=False
+        )
+
+    except Exception:
+        # ----------------------------------------------------
+        # Proteção final para qualquer erro inesperado.
+        #
+        # Em todos esses casos, é mais seguro não chamar ferramenta
+        # do que tentar executar algo incorreto.
+        # ----------------------------------------------------
+        return json.dumps(
+            {
+                "usar_ferramenta": False,
+                "nome_ferramenta": None,
+                "entrada": {}
+            },
+            ensure_ascii=False
+        )
 
 #endregion
 
@@ -1192,42 +1283,156 @@ Regras:
     # --------------------------------------------------------
     # Agora enviamos o prompt para o Gemma.
     #
-    # Esta chamada é parecida com a função chamar_llm(), mas aqui
-    # o objetivo é específico:
+    # Esta chamada também depende de um serviço externo.
     #
-    # identificar qual tarefa corresponde à descrição do usuário.
+    # Isso significa que ela pode:
+    #
+    # - demorar demais;
+    # - falhar por instabilidade de internet;
+    # - falhar por instabilidade da API;
+    # - retornar algum erro inesperado.
+    #
+    # Por isso, também usamos try/except aqui.
+    #
+    # Se der certo, devolvemos o JSON textual gerado pela LLM.
+    #
+    # Se der erro, devolvemos uma decisão segura dizendo que
+    # nenhuma tarefa foi identificada.
+    #
+    # Essa decisão segura ainda é devolvida como texto JSON,
+    # porque esta função normalmente retorna texto.
+    #
+    # Depois, a função interpretar_decisao_tarefa_por_descricao(...)
+    # transforma esse texto em dicionário Python.
     # --------------------------------------------------------
-    resposta = client.chat.completions.create(
+    try:
         # ----------------------------------------------------
-        # O modelo usado vem do arquivo .env.
+        # Aqui fazemos a chamada real para a LLM.
+        #
+        # model=os.getenv("GEMMA_MODEL")
+        #   pega o nome do modelo definido no arquivo .env.
+        #
+        # messages=[...]
+        #   envia o prompt para o modelo.
+        #
+        # temperature=0
+        #   deixa a resposta mais determinística, ou seja, menos
+        #   criativa e mais direta.
+        #
+        # max_tokens=250
+        #   limita o tamanho da resposta.
+        #
+        # Como queremos apenas um JSON pequeno, não precisamos
+        # permitir uma resposta muito grande.
         # ----------------------------------------------------
-        model=os.getenv("GEMMA_MODEL"),
+        resposta = client.chat.completions.create(
+            model=os.getenv("GEMMA_MODEL"),
+            messages=[
+                {
+                    "role": "user",
+                    "content": prompt
+                }
+            ],
+            #trecho para evitar respostas muito criativas, que podem fugir do formato JSON esperado
+            temperature=0,
+            max_tokens=250
+        )
 
         # ----------------------------------------------------
-        # Enviamos o prompt como mensagem do usuário.
+        # Pegamos o texto da resposta da LLM.
+        #
+        # Esse texto deve ser um JSON em formato de string.
         # ----------------------------------------------------
-        messages=[
+        decisao_texto = resposta.choices[0].message.content
+
+        # ----------------------------------------------------
+        # Devolvemos a decisão textual.
+        # ----------------------------------------------------
+        return decisao_texto
+
+    except APITimeoutError:
+        # ----------------------------------------------------
+        # Este erro acontece quando a LLM demora demais para
+        # responder.
+        #
+        # Nesse caso, não podemos identificar a tarefa com
+        # segurança.
+        #
+        # Então devolvemos uma decisão segura:
+        #
+        # encontrou = False
+        # id_tarefa = None
+        # ambigua = False
+        #
+        # Isso evita que o programa quebre.
+        # ----------------------------------------------------
+        return json.dumps(
             {
-                "role": "user",
-                "content": prompt
-            }
-        ]
-    )
+                "encontrou": False,
+                "id_tarefa": None,
+                "ambigua": False,
+                "ids_possiveis": [],
+                "mensagem": "A LLM demorou demais para identificar a tarefa."
+            },
+            ensure_ascii=False
+        )
 
-    # --------------------------------------------------------
-    # Pegamos o texto da resposta do Gemma.
-    #
-    # Esse texto deve ser um JSON em formato de string.
-    # --------------------------------------------------------
-    decisao_texto = resposta.choices[0].message.content
+    except APIConnectionError:
+        # ----------------------------------------------------
+        # Este erro acontece quando o programa não consegue se
+        # conectar ao serviço da LLM.
+        #
+        # Pode ser internet, instabilidade temporária do serviço
+        # ou algum problema de conexão.
+        # ----------------------------------------------------
+        return json.dumps(
+            {
+                "encontrou": False,
+                "id_tarefa": None,
+                "ambigua": False,
+                "ids_possiveis": [],
+                "mensagem": "Não foi possível conectar à LLM para identificar a tarefa."
+            },
+            ensure_ascii=False
+        )
 
-    # --------------------------------------------------------
-    # Por enquanto, devolvemos o texto bruto.
-    #
-    # A seguir, vamos criar uma função para interpretar
-    # esse JSON e transformar em um dicionário Python seguro.
-    # --------------------------------------------------------
-    return decisao_texto
+    except APIError:
+        # ----------------------------------------------------
+        # Este erro representa outros problemas retornados pela API.
+        #
+        # Por segurança, também devolvemos uma decisão dizendo que
+        # a tarefa não foi identificada.
+        # ----------------------------------------------------
+        return json.dumps(
+            {
+                "encontrou": False,
+                "id_tarefa": None,
+                "ambigua": False,
+                "ids_possiveis": [],
+                "mensagem": "A API da LLM retornou um erro ao identificar a tarefa."
+            },
+            ensure_ascii=False
+        )
+
+    except Exception:
+        # ----------------------------------------------------
+        # Este bloco captura qualquer outro erro inesperado.
+        #
+        # É uma proteção final.
+        #
+        # Melhor devolver uma decisão segura do que deixar o
+        # programa quebrar no meio do uso.
+        # ----------------------------------------------------
+        return json.dumps(
+            {
+                "encontrou": False,
+                "id_tarefa": None,
+                "ambigua": False,
+                "ids_possiveis": [],
+                "mensagem": "Ocorreu um erro inesperado ao identificar a tarefa."
+            },
+            ensure_ascii=False
+        )
 
 #endregion
 
