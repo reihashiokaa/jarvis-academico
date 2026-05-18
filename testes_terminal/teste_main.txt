@@ -42,3 +42,27 @@ O sistema deve responder normalmente com o Gemma, sem consultar agenda ou tarefa
 Para sair:
 
 sair
+
+---------------------------------------------------------------------------------------------------------------
+
+Comando para testar conclusão de tarefa por descrição no chat principal:
+
+python -m src.main
+
+Depois digitar no chat:
+
+conclua a tarefa de terminar o trabalho de ia
+
+Resultado esperado:
+
+O sistema deve usar a ferramenta concluir_tarefa_por_descricao, identificar a tarefa correspondente, chamar internamente concluir_tarefa_por_id e marcar a tarefa como concluída.
+
+Se a tarefa já estiver concluída, o resultado esperado é uma mensagem dizendo que ela já estava concluída.
+
+Depois testar:
+
+liste minhas tarefas
+
+Resultado esperado:
+
+A tarefa "terminar o trabalho de ia" deve aparecer como concluída.
