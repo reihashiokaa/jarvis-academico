@@ -11,6 +11,14 @@
 
 
 # ------------------------------------------------------------
+# Biblioteca usada para auxiliar nos cálculos com vetores.
+#
+# - Ainda a descrever
+# ------------------------------------------------------------
+numpy
+
+
+# ------------------------------------------------------------
 # Biblioteca usada para conversar com APIs no formato compatível
 # com OpenAI.
 #
@@ -21,9 +29,26 @@ openai
 
 
 # ------------------------------------------------------------
+# Biblioteca para extrair texto arquivos PDF.
+#
+# - Ainda a descrever
+# ------------------------------------------------------------
+pypdf
+
+
+# ------------------------------------------------------------
 # Biblioteca usada para carregar variáveis do arquivo .env.
 #
 # Isso permite guardar informações como chave da API e nome do
 # modelo fora do código Python.
 # ------------------------------------------------------------
 python-dotenv
+
+
+# ------------------------------------------------------------
+# Biblioteca usada para treinar o modelo de embedding.
+#
+# Ele permite converter textos, imagens e áudio em vetores 
+# numéricos densos de tamanho fixo.
+# ------------------------------------------------------------
+sentence-transforms
