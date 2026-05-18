@@ -1,0 +1,44 @@
+============================================================
+TESTAR O MAIN.PY COM TOOL CALLING
+============================================================
+
+Esse teste verifica se o chat principal já consegue usar o fluxo de ferramentas.
+
+Agora o main.py não deve mandar toda mensagem diretamente para o Gemma responder.
+
+O fluxo esperado é:
+
+1. usuário digita uma mensagem;
+2. Gemma decide se precisa usar ferramenta;
+3. se precisar, o sistema executa a ferramenta;
+4. a chamada é registrada em logs/tool_calls.jsonl;
+5. a resposta da ferramenta aparece no chat.
+
+Comando para iniciar o chat:
+
+python -m src.main
+
+Depois testar no chat:
+
+Liste minhas tarefas.
+
+Resultado esperado:
+O sistema deve usar a ferramenta consultar_tarefas e mostrar a lista de tarefas.
+
+Depois testar:
+
+O que tenho hoje?
+
+Resultado esperado:
+O sistema deve usar a ferramenta consultar_agenda_hoje e mostrar os compromissos de hoje.
+
+Depois testar uma pergunta sem ferramenta:
+
+Explique rapidamente o que é uma LLM.
+
+Resultado esperado:
+O sistema deve responder normalmente com o Gemma, sem consultar agenda ou tarefas.
+
+Para sair:
+
+sair

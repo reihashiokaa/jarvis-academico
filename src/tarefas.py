@@ -97,6 +97,43 @@ import json
 # ------------------------------------------------------------
 from pathlib import Path
 
+# ------------------------------------------------------------
+# Importamos a função recuperar_decisao_tarefa_por_descricao.
+#
+# Essa função está no arquivo llm_client.py.
+#
+# Ela será usada para pedir ao Gemma que compare uma descrição
+# textual do usuário com a lista de tarefas cadastradas.
+#
+# Exemplo:
+#
+# descrição do usuário:
+# "terminar o trabalho de ia"
+#
+# tarefas cadastradas:
+# [
+#     {"id": 5, "titulo": "terminar o trabalho de ia"}
+# ]
+#
+# A função recuperar_decisao_tarefa_por_descricao(...) pede para
+# a LLM identificar qual tarefa corresponde melhor à descrição.
+#
+# Ela devolve uma decisão em formato de dicionário Python, como:
+#
+# {
+#     "encontrou": True,
+#     "id_tarefa": 5,
+#     "ambigua": False,
+#     "ids_possiveis": [],
+#     "mensagem": "A descrição corresponde à tarefa de id 5."
+# }
+#
+# Essa decisão será usada pela função final:
+#
+# concluir_tarefa_por_descricao(...)
+# ------------------------------------------------------------
+from src.llm_client import recuperar_decisao_tarefa_por_descricao
+
 #endregion
 
 #region caminho do arquivo de tarefas
@@ -1247,84 +1284,144 @@ def recuperar_tarefa_por_id(tarefas: list, id_procurado: int):
 
 #endregion
 
-#region concluir_tarefa (FINAL, será uma ferramenta)
+#region concluir_tarefa_por_id (intermediária, recebe o id da tarefa e marca a tarefa como concluída)
 
 # ------------------------------------------------------------
-# Função: concluir_tarefa
+# Função: concluir_tarefa_por_id
 # ------------------------------------------------------------
-# Esta função marca uma tarefa como concluída.
+# Esta função marca uma tarefa como concluída usando o id da tarefa.
 #
-# Esta é uma função FINAL.
+# Esta é uma função intermediária.
 #
-# Isso significa que ela será uma candidata a ferramenta no futuro
-# tool calling.
+# Isso significa que ela ajuda o sistema por dentro, mas não será
+# chamada diretamente pelo usuário final.
 #
-# Quando o usuário disser algo como:
+# Por que ela deixou de ser uma função FINAL?
 #
-# - "Concluir tarefa 2"
-# - "Marque a tarefa 1 como feita"
-# - "Finalizei a tarefa de id 3"
+# Porque o usuário normalmente não quer ficar informando id.
 #
-# a LLM poderá escolher chamar esta função.
+# O usuário tende a falar de forma natural, por exemplo:
+#
+# "conclua a tarefa de terminar o trabalho de IA"
+#
+# Então a função FINAL será outra:
+#
+# concluir_tarefa_por_descricao(...)
+#
+# Essa função final tentará descobrir qual id da tarefa o usuário quis
+# dizer e, depois disso, chamará esta função aqui passando o id.
+#
+# Ou seja:
+#
+# concluir_tarefa_por_descricao("terminar o trabalho de IA")
+#        ↓
+# identifica que a tarefa correta é a de id 5
+#        ↓
+# chama concluir_tarefa_por_id(5)
 #
 # A lógica desta função será:
 #
-# 1. carregar todas as tarefas cadastradas;
-# 2. procurar a tarefa com o id informado;
-# 3. verificar se a tarefa existe;
-# 4. alterar o campo "concluida" para True;
-# 5. salvar a lista atualizada no arquivo tarefas.json;
-# 6. devolver uma mensagem de confirmação para o usuário.
-#
-# Repare que esta função usa funções intermediárias que já criamos:
-#
-# carregar_tarefas()
-#   -> lê a lista atual de tarefas.
-#
-# recuperar_tarefa_por_id(tarefas, id_tarefa)
-#   -> encontra uma tarefa específica pelo id.
-#
-# salvar_tarefas(tarefas)
-#   -> grava a lista atualizada no arquivo.
+# 1. receber o id da tarefa;
+# 2. converter esse id para número inteiro, se necessário;
+# 3. carregar todas as tarefas cadastradas;
+# 4. procurar a tarefa com o id informado;
+# 5. verificar se a tarefa existe;
+# 6. verificar se a tarefa já está concluída;
+# 7. marcar a tarefa como concluída;
+# 8. salvar a lista atualizada no arquivo tarefas.json;
+# 9. devolver uma mensagem de confirmação.
 # ------------------------------------------------------------
-def concluir_tarefa(id_tarefa: int) -> str:
+def concluir_tarefa_por_id(id_tarefa: int) -> str:
     # --------------------------------------------------------
     # O parâmetro "id_tarefa" representa o identificador da tarefa
     # que queremos marcar como concluída.
     #
     # Exemplo:
     #
-    # id_tarefa = 2
+    # id_tarefa = 5
     #
     # Isso significa:
     #
-    # "quero concluir a tarefa que tem id 2".
+    # "quero concluir a tarefa que tem id 5".
     #
-    # Usamos int porque o id é um número inteiro.
-    # --------------------------------------------------------
-
-    # --------------------------------------------------------
-    # Primeiro, carregamos todas as tarefas cadastradas no arquivo
-    # data/tarefas.json.
-    #
-    # A função carregar_tarefas() devolve uma lista de tarefas.
+    # Mesmo sendo uma função intermediária, vamos deixar ela mais
+    # resistente, porque às vezes a LLM pode enviar o id como texto.
     #
     # Exemplo:
     #
-    # [
-    #     {
-    #         "id": 1,
-    #         "titulo": "Estudar RAG",
-    #         "descricao": "Revisar chunking e embeddings",
-    #         "concluida": False
-    #     },
-    #     {
-    #         "id": 2,
-    #         "titulo": "Fazer README",
-    #         "descricao": "Escrever instruções básicas do projeto",
-    #         "concluida": False
-    #     }
-    # ]
+    # 5
+    #
+    # ou:
+    #
+    # "5"
+    #
+    # Para uma pessoa, os dois parecem a mesma coisa.
+    # Para o Python, são tipos diferentes.
+    #
+    # Por isso, vamos tentar converter o valor recebido para inteiro.
+    # --------------------------------------------------------
+
+    # --------------------------------------------------------
+    # Primeiro tratamos o caso em que nenhum id foi informado.
+    #
+    # Se id_tarefa vier como None, não temos como saber qual tarefa
+    # deve ser concluída.
+    #
+    # Nesse caso, devolvemos uma mensagem amigável.
+    # --------------------------------------------------------
+    if id_tarefa is None:
+        return (
+            "Para concluir uma tarefa, preciso identificar qual tarefa você quer concluir. "
+            "Descreva melhor a tarefa ou informe o ID dela."
+        )
+
+    # --------------------------------------------------------
+    # Agora tentamos converter o id recebido para número inteiro.
+    #
+    # Isso resolve o caso em que o id vem como string.
+    #
+    # Exemplo:
+    #
+    # int("5") vira 5
+    #
+    # Se id_tarefa já for 5, ele continua funcionando.
+    # --------------------------------------------------------
+    try:
+        id_tarefa = int(id_tarefa)
+
+    except ValueError:
+        # ----------------------------------------------------
+        # ValueError acontece quando o valor não pode ser convertido
+        # para inteiro.
+        #
+        # Exemplo:
+        #
+        # int("trabalho de ia")
+        #
+        # Isso não funciona, porque esse texto não é um número.
+        # ----------------------------------------------------
+        return (
+            "Não consegui identificar um ID numérico válido para a tarefa. "
+            "Descreva melhor a tarefa ou informe um número de ID."
+        )
+
+    except TypeError:
+        # ----------------------------------------------------
+        # TypeError cobre casos em que o valor recebido tem um tipo
+        # que não pode ser convertido adequadamente.
+        #
+        # Por segurança, devolvemos uma mensagem amigável.
+        # ----------------------------------------------------
+        return (
+            "Não consegui identificar um ID numérico válido para a tarefa. "
+            "Descreva melhor a tarefa ou informe um número de ID."
+        )
+
+    # --------------------------------------------------------
+    # Agora carregamos todas as tarefas cadastradas no arquivo
+    # data/tarefas.json.
+    #
+    # A função carregar_tarefas() devolve uma lista de tarefas.
     # --------------------------------------------------------
     tarefas = carregar_tarefas()
 
@@ -1343,12 +1440,7 @@ def concluir_tarefa(id_tarefa: int) -> str:
     # Aqui tratamos o caso em que a tarefa não foi encontrada.
     #
     # Se tarefa is None, significa que nenhuma tarefa da lista tem
-    # o id informado pelo usuário.
-    #
-    # Nesse caso, não devemos tentar alterar nada.
-    #
-    # Apenas devolvemos uma mensagem avisando que a tarefa não foi
-    # encontrada.
+    # o id informado.
     # --------------------------------------------------------
     if tarefa is None:
         return f"Não encontrei nenhuma tarefa com id {id_tarefa}."
@@ -1356,20 +1448,15 @@ def concluir_tarefa(id_tarefa: int) -> str:
     # --------------------------------------------------------
     # Se chegamos aqui, significa que a tarefa foi encontrada.
     #
-    # Agora vamos verificar se ela já estava concluída antes.
+    # Agora verificamos se ela já estava concluída antes.
     #
-    # Isso não é obrigatório, mas deixa a resposta mais inteligente.
-    #
-    # Se a tarefa já estiver concluída, não precisamos salvar de novo.
-    # Podemos apenas avisar o usuário.
+    # Isso evita salvar de novo uma tarefa que já estava marcada
+    # como feita.
     # --------------------------------------------------------
     if tarefa.get("concluida", False):
         # ----------------------------------------------------
         # Pegamos o título da tarefa para deixar a mensagem mais
         # clara para o usuário.
-        #
-        # Se por algum motivo não existir título, usamos
-        # "Sem título".
         # ----------------------------------------------------
         titulo = tarefa.get("titulo", "Sem título")
 
@@ -1381,10 +1468,6 @@ def concluir_tarefa(id_tarefa: int) -> str:
 
     # --------------------------------------------------------
     # Agora marcamos a tarefa como concluída.
-    #
-    # Como "tarefa" é um dicionário que veio de dentro da lista
-    # "tarefas", alterar esse dicionário também altera a tarefa
-    # dentro da lista.
     #
     # Antes:
     #
@@ -1400,27 +1483,312 @@ def concluir_tarefa(id_tarefa: int) -> str:
     # Depois de alterar a tarefa, precisamos salvar a lista inteira
     # de volta no arquivo data/tarefas.json.
     #
-    # Se não fizermos isso, a alteração existirá apenas na memória
-    # do Python e será perdida quando o programa terminar.
+    # Se não salvarmos, a alteração será perdida quando o programa
+    # terminar.
     # --------------------------------------------------------
     salvar_tarefas(tarefas)
 
     # --------------------------------------------------------
     # Pegamos o título da tarefa para montar uma mensagem mais
     # amigável.
-    #
-    # Exemplo:
-    #
-    # "Fazer README"
     # --------------------------------------------------------
     titulo = tarefa.get("titulo", "Sem título")
 
     # --------------------------------------------------------
     # Por fim, devolvemos uma mensagem de confirmação.
-    #
-    # Essa mensagem poderá ser mostrada ao usuário depois que a
-    # ferramenta for chamada.
     # --------------------------------------------------------
     return f"Tarefa concluída com sucesso: [{id_tarefa}] {titulo}"
+
+#endregion
+
+#region concluir_tarefa_por_descricao (FINAL, será uma ferramenta)
+
+# ------------------------------------------------------------
+# Função: concluir_tarefa_por_descricao
+# ------------------------------------------------------------
+# Esta função marca uma tarefa como concluída usando uma descrição
+# textual fornecida pelo usuário.
+#
+# Esta é uma função FINAL.
+#
+# Isso significa que ela será uma candidata a ferramenta no futuro
+# tool calling.
+#
+# Por que esta função é necessária?
+#
+# Porque o usuário normalmente não vai falar assim:
+#
+# "concluir tarefa 5"
+#
+# Ele provavelmente vai falar de forma mais natural, por exemplo:
+#
+# "conclua a tarefa de terminar o trabalho de ia"
+#
+# ou:
+#
+# "terminei aquela tarefa do README"
+#
+# Então, em vez de exigir que o usuário saiba o id da tarefa, esta
+# função recebe uma descrição textual e tenta descobrir qual tarefa
+# cadastrada corresponde melhor a essa descrição.
+#
+# A lógica desta função será:
+#
+# 1. receber a descrição textual da tarefa;
+# 2. carregar todas as tarefas cadastradas;
+# 3. verificar se existem tarefas cadastradas;
+# 4. pedir para a LLM comparar a descrição com as tarefas existentes;
+# 5. verificar se a LLM encontrou uma tarefa clara;
+# 6. se encontrou, chamar concluir_tarefa_por_id(id);
+# 7. se ficou ambíguo, pedir para o usuário especificar melhor;
+# 8. se não encontrou, avisar que nenhuma tarefa correspondente foi encontrada.
+#
+# Repare que esta função NÃO altera o arquivo diretamente.
+#
+# Quem altera o arquivo é a função intermediária:
+#
+# concluir_tarefa_por_id(...)
+#
+# Isso deixa o código mais organizado:
+#
+# concluir_tarefa_por_descricao(...)
+#   -> entende qual tarefa o usuário quis dizer.
+#
+# concluir_tarefa_por_id(...)
+#   -> altera a tarefa com segurança no arquivo tarefas.json.
+# ------------------------------------------------------------
+def concluir_tarefa_por_descricao(descricao_tarefa: str) -> str:
+    # --------------------------------------------------------
+    # O parâmetro "descricao_tarefa" representa o texto usado pelo
+    # usuário para descrever a tarefa que deseja concluir.
+    #
+    # Exemplo:
+    #
+    # "terminar o trabalho de ia"
+    #
+    # ou:
+    #
+    # "fazer README"
+    #
+    # Essa descrição será comparada com as tarefas cadastradas no
+    # arquivo data/tarefas.json.
+    # --------------------------------------------------------
+
+    # --------------------------------------------------------
+    # Primeiro, verificamos se a descrição veio vazia.
+    #
+    # Isso pode acontecer se a LLM chamar a ferramenta sem passar
+    # corretamente a descrição da tarefa.
+    #
+    # Exemplo ruim:
+    #
+    # concluir_tarefa_por_descricao("")
+    #
+    # Nesse caso, não temos informação suficiente para identificar
+    # a tarefa.
+    # --------------------------------------------------------
+    if not descricao_tarefa:
+        return (
+            "Para concluir uma tarefa, preciso que você descreva qual tarefa deseja concluir. "
+            "Por exemplo: \"concluir a tarefa de terminar o trabalho de IA\"."
+        )
+
+    # --------------------------------------------------------
+    # Agora carregamos todas as tarefas cadastradas.
+    #
+    # A função carregar_tarefas() lê o arquivo data/tarefas.json
+    # e devolve uma lista de tarefas.
+    #
+    # Exemplo:
+    #
+    # [
+    #     {
+    #         "id": 5,
+    #         "titulo": "terminar o trabalho de ia",
+    #         "descricao": "",
+    #         "concluida": False
+    #     }
+    # ]
+    # --------------------------------------------------------
+    tarefas = carregar_tarefas()
+
+    # --------------------------------------------------------
+    # Agora verificamos se existe pelo menos uma tarefa cadastrada.
+    #
+    # Se a lista estiver vazia, não há nada para concluir.
+    # --------------------------------------------------------
+    if not tarefas:
+        return "Você não tem tarefas cadastradas para concluir."
+
+    # --------------------------------------------------------
+    # Agora pedimos para a LLM identificar qual tarefa corresponde
+    # melhor à descrição fornecida pelo usuário.
+    #
+    # A função recuperar_decisao_tarefa_por_descricao(...) está no
+    # arquivo llm_client.py.
+    #
+    # Ela recebe:
+    #
+    # - a descrição textual da tarefa;
+    # - a lista de tarefas cadastradas.
+    #
+    # E devolve uma decisão em formato de dicionário Python.
+    #
+    # Exemplo de decisão quando encontra uma tarefa:
+    #
+    # {
+    #     "encontrou": True,
+    #     "id_tarefa": 5,
+    #     "ambigua": False,
+    #     "ids_possiveis": [],
+    #     "mensagem": "A descrição corresponde à tarefa de id 5."
+    # }
+    #
+    # Exemplo de decisão quando fica ambíguo:
+    #
+    # {
+    #     "encontrou": False,
+    #     "id_tarefa": None,
+    #     "ambigua": True,
+    #     "ids_possiveis": [5, 6],
+    #     "mensagem": "Encontrei mais de uma tarefa possível."
+    # }
+    # --------------------------------------------------------
+    decisao = recuperar_decisao_tarefa_por_descricao(
+        descricao_tarefa=descricao_tarefa,
+        tarefas=tarefas
+    )
+
+    # --------------------------------------------------------
+    # Agora recuperamos os campos principais da decisão.
+    #
+    # Usamos .get(...) para evitar erro caso alguma chave não exista.
+    # --------------------------------------------------------
+    encontrou = decisao.get("encontrou", False)
+    id_tarefa = decisao.get("id_tarefa")
+    ambigua = decisao.get("ambigua", False)
+    ids_possiveis = decisao.get("ids_possiveis", [])
+    mensagem = decisao.get("mensagem", "")
+
+    # --------------------------------------------------------
+    # Primeiro tratamos o caso de ambiguidade.
+    #
+    # Ambiguidade significa que a LLM encontrou mais de uma tarefa
+    # possível e não conseguiu escolher uma com segurança.
+    #
+    # Exemplo:
+    #
+    # [5] terminar o trabalho de ia
+    # [6] revisar o trabalho de ia
+    #
+    # Usuário:
+    #
+    # "conclua a tarefa do trabalho de ia"
+    #
+    # Nesse caso, pode não ser seguro escolher automaticamente.
+    # Então pedimos para o usuário especificar melhor.
+    # --------------------------------------------------------
+    if ambigua:
+        # ----------------------------------------------------
+        # Vamos montar uma resposta amigável para mostrar ao usuário
+        # quais tarefas podem ser a tarefa desejada.
+        # ----------------------------------------------------
+        linhas = []
+
+        linhas.append("Encontrei mais de uma tarefa que pode corresponder ao que você pediu:")
+        linhas.append("")
+
+        # ----------------------------------------------------
+        # Agora percorremos os ids possíveis sugeridos pela LLM.
+        #
+        # Para cada id, tentamos recuperar a tarefa correspondente.
+        #
+        # Assim conseguimos mostrar título e descrição, não apenas
+        # o número do id.
+        # ----------------------------------------------------
+        for id_possivel in ids_possiveis:
+            tarefa_possivel = recuperar_tarefa_por_id(tarefas, id_possivel)
+
+            if tarefa_possivel is not None:
+                titulo = tarefa_possivel.get("titulo", "Sem título")
+                descricao = tarefa_possivel.get("descricao", "")
+
+                linhas.append(f"- [{id_possivel}] {titulo}")
+
+                if descricao:
+                    linhas.append(f"  {descricao}")
+
+        # ----------------------------------------------------
+        # Depois de listar as possibilidades, pedimos para o usuário
+        # especificar melhor.
+        # ----------------------------------------------------
+        linhas.append("")
+        linhas.append("Pode me dizer com mais detalhes qual delas você quer concluir?")
+
+        return "\n".join(linhas)
+
+    # --------------------------------------------------------
+    # Agora tratamos o caso em que nenhuma tarefa foi encontrada.
+    #
+    # Isso significa que a LLM não encontrou uma correspondência
+    # clara entre a descrição do usuário e as tarefas cadastradas.
+    # --------------------------------------------------------
+    if not encontrou:
+        # ----------------------------------------------------
+        # Se a LLM devolveu uma mensagem explicativa, podemos usar
+        # essa mensagem como complemento.
+        #
+        # Mas mantemos uma resposta principal simples e amigável.
+        # ----------------------------------------------------
+        if mensagem:
+            return (
+                "Não encontrei uma tarefa cadastrada que corresponda claramente a essa descrição. "
+                f"Detalhe: {mensagem}"
+            )
+
+        return "Não encontrei uma tarefa cadastrada que corresponda claramente a essa descrição."
+
+    # --------------------------------------------------------
+    # Agora tratamos um caso de segurança.
+    #
+    # Pode acontecer de a LLM dizer que encontrou uma tarefa, mas
+    # não fornecer um id válido.
+    #
+    # Nesse caso, não podemos concluir nada com segurança.
+    # --------------------------------------------------------
+    if id_tarefa is None:
+        return (
+            "Entendi que você quer concluir uma tarefa, mas não consegui identificar com segurança qual é. "
+            "Descreva melhor a tarefa ou informe mais detalhes."
+        )
+
+    # --------------------------------------------------------
+    # Se chegamos aqui, significa que:
+    #
+    # - não houve ambiguidade;
+    # - a LLM encontrou uma tarefa;
+    # - existe um id de tarefa identificado.
+    #
+    # Agora chamamos a função intermediária que realmente marca a
+    # tarefa como concluída.
+    #
+    # Essa função é responsável por:
+    #
+    # - carregar tarefas;
+    # - encontrar a tarefa pelo id;
+    # - alterar "concluida" para True;
+    # - salvar no arquivo tarefas.json;
+    # - devolver mensagem de confirmação.
+    # --------------------------------------------------------
+    resposta = concluir_tarefa_por_id(id_tarefa)
+
+    # --------------------------------------------------------
+    # Por fim, devolvemos a resposta da conclusão por id.
+    #
+    # Exemplo:
+    #
+    # "Tarefa concluída com sucesso: [5] terminar o trabalho de ia"
+    # --------------------------------------------------------
+    return resposta
 
 #endregion
