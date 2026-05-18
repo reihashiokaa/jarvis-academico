@@ -203,38 +203,3 @@ Comando para testar com uma tarefa inexistente:
 
 python -c "from src.tarefas import carregar_tarefas, recuperar_tarefa_por_id; tarefas = carregar_tarefas(); print(recuperar_tarefa_por_id(tarefas, 999))"
 
-============================================================
-10. TESTAR A FUNÇÃO concluir_tarefa()
-============================================================
-
-Essa função marca uma tarefa como concluída no arquivo data/tarefas.json.
-
-Ela é uma função FINAL.
-
-Isso significa que ela poderá ser usada futuramente como ferramenta no tool calling.
-
-A função faz o processo completo:
-
-1. carrega todas as tarefas cadastradas;
-2. recupera a tarefa pelo id informado;
-3. verifica se a tarefa existe;
-4. verifica se ela já está concluída;
-5. altera o campo "concluida" para True;
-6. salva a lista atualizada no arquivo;
-7. devolve uma mensagem de confirmação.
-
-Atenção:
-Este teste MODIFICA o arquivo data/tarefas.json.
-Depois de rodar, a tarefa escolhida ficará marcada como concluída.
-
-Comando para concluir uma tarefa existente:
-
-python -c "from src.tarefas import concluir_tarefa, consultar_tarefas; print(concluir_tarefa(2)); print(); print(consultar_tarefas())"
-
-Comando para tentar concluir uma tarefa inexistente:
-
-python -c "from src.tarefas import concluir_tarefa; print(concluir_tarefa(999))"
-
-Comando para testar uma tarefa que já está concluída:
-
-python -c "from src.tarefas import concluir_tarefa; print(concluir_tarefa(2))"

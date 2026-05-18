@@ -21,6 +21,18 @@
     "id": 4,
     "titulo": "Implementar tool calling",
     "descricao": "Realizar a integração do sistema de chamada de ferramentas",
-    "concluida": false
+    "concluida": true
+  },
+  {
+    "id": 5,
+    "titulo": "terminar o trabalho de ia",
+    "descricao": "",
+    "concluida": true
+  },
+  {
+    "id": 6,
+    "titulo": "terminar tarefa de redes",
+    "descricao": "",
+    "concluida": true
   }
 ]

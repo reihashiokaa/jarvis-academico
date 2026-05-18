@@ -1,0 +1,323 @@
+============================================================
+01. TESTAR A FUNÇÃO registrar_chamada_ferramenta() do arquivo logger.py
+============================================================
+
+Essa função registra uma chamada de ferramenta no arquivo logs/tool_calls.jsonl.
+
+Ela é uma função intermediária.
+
+Isso significa que ela ajuda o sistema por dentro, mas não será chamada diretamente pelo usuário final.
+
+Ela grava no log:
+
+- data e hora da chamada;
+- nome da ferramenta chamada;
+- entrada recebida pela ferramenta;
+- saída devolvida pela ferramenta.
+
+Comando para registrar um log de teste:
+
+python -c "from src.logger import registrar_chamada_ferramenta; registrar_chamada_ferramenta('teste_ferramenta', {'mensagem': 'entrada de teste'}, 'saída de teste'); print('Log registrado com sucesso.')"
+
+Comando para visualizar o arquivo de logs no CMD:
+
+type logs\tool_calls.jsonl
+
+Caso o terminal esteja mostrando acentos de forma errada:
+
+chcp 65001, para fazê-lo usar UTF-8, que é a codificação correta para acentos.
+
+============================================================
+02. TESTAR A FUNÇÃO carregar_ferramentas_disponiveis() do arquivo tools.py
+============================================================
+
+Essa função monta um dicionário com todas as ferramentas disponíveis no sistema.
+
+Ela é uma função intermediária.
+
+Isso significa que ela ajuda o sistema por dentro, mas não será chamada diretamente pelo usuário final.
+
+Ela liga o nome textual da ferramenta à função Python real.
+
+Exemplo:
+
+"consultar_tarefas" → função consultar_tarefas()
+
+Esse teste mostra apenas os nomes das ferramentas cadastradas.
+
+Comando:
+
+python -c "from src.tools import carregar_ferramentas_disponiveis; ferramentas = carregar_ferramentas_disponiveis(); print(list(ferramentas.keys()))"
+
+============================================================
+03. TESTAR A FUNÇÃO recuperar_ferramenta_por_nome() do arquivo tools.py
+============================================================
+
+Essa função recebe o nome textual de uma ferramenta e tenta recuperar a função Python correspondente.
+
+Ela é uma função intermediária.
+
+Isso significa que ela ajuda o sistema por dentro, mas não será chamada diretamente pelo usuário final.
+
+Ela será importante no fluxo de tool calling, porque a LLM escolherá ferramentas pelo nome.
+
+Exemplo:
+
+"consultar_tarefas"
+
+A função deve encontrar a função Python real:
+
+consultar_tarefas()
+
+Comando para testar com uma ferramenta existente:
+
+python -c "from src.tools import recuperar_ferramenta_por_nome; ferramenta = recuperar_ferramenta_por_nome('consultar_tarefas'); print(ferramenta)"
+
+Comando para testar com uma ferramenta inexistente:
+
+python -c "from src.tools import recuperar_ferramenta_por_nome; ferramenta = recuperar_ferramenta_por_nome('ferramenta_inexistente'); print(ferramenta)"
+
+============================================================
+04. TESTAR A FUNÇÃO executar_ferramenta() do arquivo tools.py
+============================================================
+
+Essa função recebe o nome de uma ferramenta e uma entrada em formato de dicionário.
+
+Ela recupera a função Python correspondente, executa essa função, registra a chamada no arquivo logs/tool_calls.jsonl e devolve a saída.
+
+Ela é uma função intermediária.
+
+Isso significa que ela ajuda o sistema por dentro, mas não será chamada diretamente pelo usuário final.
+
+Ela será uma peça central no futuro fluxo de tool calling.
+
+Comando para testar uma ferramenta sem entrada:
+
+python -c "from src.tools import executar_ferramenta; print(executar_ferramenta('consultar_tarefas', {}))"
+
+Comando para testar uma ferramenta com entrada:
+
+python -c "from src.tools import executar_ferramenta; print(executar_ferramenta('adicionar_tarefa', {'titulo': 'Testar tools.py', 'descricao': 'Verificar se executar_ferramenta chama adicionar_tarefa corretamente'}))"
+
+Comando para testar uma ferramenta inexistente:
+
+python -c "from src.tools import executar_ferramenta; print(executar_ferramenta('ferramenta_inexistente', {}))"
+
+Comando para visualizar o log no CMD:
+
+type logs\tool_calls.jsonl
+
+============================================================
+05. TESTAR A FUNÇÃO carregar_descricoes_ferramentas() do arquivo tools.py
+============================================================
+
+Essa função retorna uma lista com as descrições das ferramentas disponíveis no sistema.
+
+Ela é uma função intermediária.
+
+Isso significa que ela ajuda o sistema por dentro, mas não será chamada diretamente pelo usuário final.
+
+Essa função será usada depois para explicar para a LLM quais ferramentas existem, quando cada ferramenta deve ser usada e quais parâmetros cada ferramenta espera receber.
+
+Ela deve listar ferramentas como:
+
+- consultar_agenda_por_data;
+- consultar_agenda_hoje;
+- consultar_agenda_amanha;
+- consultar_agenda_semana_atual;
+- consultar_tarefas;
+- adicionar_tarefa;
+
+Comando:
+
+python -c "from src.tools import carregar_descricoes_ferramentas; import json; print(json.dumps(carregar_descricoes_ferramentas(), ensure_ascii=False, indent=2))"
+
+============================================================
+06. TESTAR A FUNÇÃO interpretar_decisao_ferramenta() do arquivo llm_client.py
+============================================================
+
+Essa função recebe um texto que deveria estar em formato JSON e tenta transformar esse texto em um dicionário Python.
+
+Ela é uma função intermediária.
+
+Isso significa que ela ajuda o sistema por dentro, mas não será chamada diretamente pelo usuário final.
+
+Ela será usada depois da função decidir_chamada_ferramenta(), porque o Gemma devolve a decisão como texto, e o Python precisa interpretar esse texto como dados.
+
+O formato esperado da decisão é:
+
+{
+  "usar_ferramenta": true,
+  "nome_ferramenta": "consultar_tarefas",
+  "entrada": {}
+}
+
+Comando para testar com JSON válido:
+
+python -c "from src.llm_client import interpretar_decisao_ferramenta; texto = '{\"usar_ferramenta\": true, \"nome_ferramenta\": \"consultar_tarefas\", \"entrada\": {}}'; print(interpretar_decisao_ferramenta(texto))"
+
+Comando para testar com JSON inválido:
+
+python -c "from src.llm_client import interpretar_decisao_ferramenta; texto = 'isso não é um json'; print(interpretar_decisao_ferramenta(texto))"
+
+============================================================
+07. TESTAR A FUNÇÃO decidir_chamada_ferramenta() do arquivo llm_client.py
+============================================================
+
+Essa função envia uma mensagem do usuário para o Gemma e pede para a LLM decidir se alguma ferramenta deve ser chamada.
+
+Ela é uma função intermediária.
+
+Isso significa que ela ajuda o sistema por dentro, mas não será chamada diretamente pelo usuário final.
+
+Ela ainda NÃO executa a ferramenta.
+
+Ela apenas pede para o Gemma responder uma decisão em formato JSON.
+
+A decisão esperada deve ter este formato:
+
+{
+  "usar_ferramenta": true,
+  "nome_ferramenta": "consultar_tarefas",
+  "entrada": {}
+}
+
+Comando para testar uma pergunta sobre tarefas:
+
+python -c "from src.llm_client import decidir_chamada_ferramenta; from src.tools import carregar_descricoes_ferramentas; descricoes = carregar_descricoes_ferramentas(); print(decidir_chamada_ferramenta('Liste minhas tarefas.', descricoes))"
+
+Comando para testar uma pergunta sobre agenda de hoje:
+
+python -c "from src.llm_client import decidir_chamada_ferramenta; from src.tools import carregar_descricoes_ferramentas; descricoes = carregar_descricoes_ferramentas(); print(decidir_chamada_ferramenta('O que tenho hoje?', descricoes))"
+
+Comando para testar uma pergunta que não precisa de ferramenta:
+
+python -c "from src.llm_client import decidir_chamada_ferramenta; from src.tools import carregar_descricoes_ferramentas; descricoes = carregar_descricoes_ferramentas(); print(decidir_chamada_ferramenta('Explique rapidamente o que é uma LLM.', descricoes))"
+
+Comando para testar conclusão de tarefa por descrição:
+
+python -c "from src.llm_client import decidir_chamada_ferramenta; from src.tools import carregar_descricoes_ferramentas; descricoes = carregar_descricoes_ferramentas(); print(decidir_chamada_ferramenta('conclua a tarefa de terminar o trabalho de ia', descricoes))"
+
+============================================================
+08. TESTAR A FUNÇÃO recuperar_decisao_ferramenta() do arquivo llm_client.py
+============================================================
+
+Essa função pede ao Gemma para decidir se alguma ferramenta deve ser chamada e já interpreta a resposta como um dicionário Python.
+
+Ela é uma função intermediária.
+
+Isso significa que ela ajuda o sistema por dentro, mas não será chamada diretamente pelo usuário final.
+
+Ela junta duas etapas:
+
+1. decidir_chamada_ferramenta()
+   envia a mensagem do usuário para o Gemma e recebe uma decisão em texto JSON.
+
+2. interpretar_decisao_ferramenta()
+   transforma esse texto em um dicionário Python seguro.
+
+O retorno esperado é algo como:
+
+{
+  "usar_ferramenta": True,
+  "nome_ferramenta": "consultar_tarefas",
+  "entrada": {}
+}
+
+Comando para testar uma pergunta sobre tarefas:
+
+python -c "from src.llm_client import recuperar_decisao_ferramenta; from src.tools import carregar_descricoes_ferramentas; descricoes = carregar_descricoes_ferramentas(); print(recuperar_decisao_ferramenta('Liste minhas tarefas.', descricoes))"
+
+Comando para testar uma pergunta sobre agenda de hoje:
+
+python -c "from src.llm_client import recuperar_decisao_ferramenta; from src.tools import carregar_descricoes_ferramentas; descricoes = carregar_descricoes_ferramentas(); print(recuperar_decisao_ferramenta('O que tenho hoje?', descricoes))"
+
+Comando para testar uma pergunta que não precisa de ferramenta:
+
+python -c "from src.llm_client import recuperar_decisao_ferramenta; from src.tools import carregar_descricoes_ferramentas; descricoes = carregar_descricoes_ferramentas(); print(recuperar_decisao_ferramenta('Explique rapidamente o que é uma LLM.', descricoes))"
+
+============================================================
+09. TESTAR A FUNÇÃO decidir_tarefa_por_descricao() do arquivo llm_client.py
+============================================================
+
+Essa função pede para o Gemma identificar qual tarefa corresponde melhor a uma descrição textual fornecida pelo usuário.
+
+Ela é uma função intermediária.
+
+Isso significa que ela ajuda o sistema por dentro, mas não será chamada diretamente pelo usuário final.
+
+Ela recebe:
+
+- uma descrição textual da tarefa;
+- a lista de tarefas cadastradas.
+
+Depois, envia essas informações para o Gemma e pede uma decisão em JSON.
+
+Ela ainda NÃO conclui a tarefa.
+Ela apenas tenta identificar qual tarefa corresponde à descrição.
+
+Comando:
+
+python -c "from src.llm_client import decidir_tarefa_por_descricao; from src.tarefas import carregar_tarefas; tarefas = carregar_tarefas(); print(decidir_tarefa_por_descricao('terminar o trabalho de ia', tarefas))"
+
+============================================================
+10. TESTAR A FUNÇÃO interpretar_decisao_tarefa_por_descricao() do arquivo llm_client.py
+============================================================
+
+Essa função recebe um texto JSON devolvido pela LLM e tenta transformar esse texto em um dicionário Python seguro.
+
+Ela é uma função intermediária.
+
+Isso significa que ela ajuda o sistema por dentro, mas não será chamada diretamente pelo usuário final.
+
+Ela será usada depois da função decidir_tarefa_por_descricao(), porque o Gemma devolve a identificação da tarefa como texto, e o Python precisa interpretar esse texto como dados.
+
+O formato esperado é:
+
+{
+  "encontrou": true,
+  "id_tarefa": 5,
+  "ambigua": false,
+  "ids_possiveis": [],
+  "mensagem": "A descrição corresponde à tarefa de id 5."
+}
+
+Comando para testar com JSON válido:
+
+python -c "from src.llm_client import interpretar_decisao_tarefa_por_descricao; texto = '{\"encontrou\": true, \"id_tarefa\": 5, \"ambigua\": false, \"ids_possiveis\": [], \"mensagem\": \"A descrição corresponde à tarefa de id 5.\"}'; print(interpretar_decisao_tarefa_por_descricao(texto))"
+
+Comando para testar com JSON inválido:
+
+python -c "from src.llm_client import interpretar_decisao_tarefa_por_descricao; texto = 'isso não é um json'; print(interpretar_decisao_tarefa_por_descricao(texto))"
+
+============================================================
+11. TESTAR A FUNÇÃO recuperar_decisao_tarefa_por_descricao()
+============================================================
+
+Essa função pede ao Gemma para identificar qual tarefa corresponde a uma descrição textual e já interpreta a resposta como um dicionário Python seguro.
+
+Ela é uma função intermediária.
+
+Isso significa que ela ajuda o sistema por dentro, mas não será chamada diretamente pelo usuário final.
+
+Ela junta duas etapas:
+
+1. decidir_tarefa_por_descricao()
+   envia a descrição da tarefa e a lista de tarefas para o Gemma.
+
+2. interpretar_decisao_tarefa_por_descricao()
+   transforma a resposta textual do Gemma em um dicionário Python seguro.
+
+O retorno esperado é algo como:
+
+{
+  "encontrou": True,
+  "id_tarefa": 5,
+  "ambigua": False,
+  "ids_possiveis": [],
+  "mensagem": "A descrição corresponde à tarefa de id 5."
+}
+
+Comando:
+
+python -c "from src.llm_client import recuperar_decisao_tarefa_por_descricao; from src.tarefas import carregar_tarefas; tarefas = carregar_tarefas(); print(recuperar_decisao_tarefa_por_descricao('terminar o trabalho de ia', tarefas))"

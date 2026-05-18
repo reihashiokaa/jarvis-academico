@@ -1,3 +1,4 @@
+#region descrição do arquivo
 # ============================================================
 # Arquivo: main.py
 # ------------------------------------------------------------
@@ -14,38 +15,81 @@
 # O usuário digita uma mensagem, o sistema envia essa mensagem
 # para a LLM e depois mostra a resposta na tela.
 # ============================================================
+#endregion
 
+#region importações
 
-
-
+# ------------------------------------------------------------
+# Importamos a função chamar_llm.
+#
+# Essa função envia uma mensagem diretamente para o Gemma e recebe
+# uma resposta textual.
+#
+# Ela será usada quando a mensagem do usuário NÃO precisar chamar
+# nenhuma ferramenta.
+#
+# Exemplo:
+#
+# Usuário:
+# "Explique rapidamente o que é uma LLM."
+#
+# Nesse caso, o sistema pode responder diretamente com a LLM, sem
+# consultar agenda, tarefas ou materiais.
+# ------------------------------------------------------------
+from src.llm_client import chamar_llm
 
 
 # ------------------------------------------------------------
-# Aqui importamos a função chamar_llm.
+# Importamos a função recuperar_decisao_ferramenta.
 #
-# Essa função está no arquivo llm_client.py.
+# Essa função pede ao Gemma para decidir se a mensagem do usuário
+# precisa chamar alguma ferramenta.
 #
-# Lembra?
-# O arquivo llm_client.py é o responsável por conversar com o
-# Gemma 12B.
+# Ela devolve um dicionário Python no formato:
 #
-# Então, quando o main.py quiser mandar uma mensagem para a IA,
-# ele não precisa saber todos os detalhes da API.
+# {
+#     "usar_ferramenta": True,
+#     "nome_ferramenta": "consultar_tarefas",
+#     "entrada": {}
+# }
 #
-# Ele só chama:
-#
-# chamar_llm(mensagem)
-#
-# Isso deixa o projeto mais organizado.
+# Essa decisão será usada no fluxo principal do chat.
 # ------------------------------------------------------------
-from llm_client import chamar_llm
+from src.llm_client import recuperar_decisao_ferramenta
 
 
+# ------------------------------------------------------------
+# Importamos a função carregar_descricoes_ferramentas.
+#
+# Essa função retorna a lista de ferramentas disponíveis no sistema,
+# com nome, descrição e parâmetros.
+#
+# O Gemma precisa receber essas descrições para saber quais
+# ferramentas ele pode escolher.
+# ------------------------------------------------------------
+from src.tools import carregar_descricoes_ferramentas
 
 
-# AGORA A FUNÇÃO PRINCIPAL DO PROGRAMA
-# QUE VAI CONTROLAR O FLUXO DE CONVERSA COM O USUÁRIO E A LLM
+# ------------------------------------------------------------
+# Importamos a função executar_ferramenta.
+#
+# Essa função recebe:
+#
+# - nome da ferramenta;
+# - entrada da ferramenta.
+#
+# Depois ela:
+#
+# - recupera a função Python correta;
+# - executa essa função;
+# - registra o log;
+# - devolve a saída.
+# ------------------------------------------------------------
+from src.tools import executar_ferramenta
 
+#endregion
+
+#region função main
 # ------------------------------------------------------------
 # Função: main
 # ------------------------------------------------------------
@@ -70,6 +114,25 @@ def main():
     # --------------------------------------------------------
     print("JARVIS Acadêmico iniciado.")
     print("Digite 'sair' para encerrar o programa.")
+
+    # --------------------------------------------------------
+    # Agora carregamos as descrições das ferramentas disponíveis.
+    #
+    # Essas descrições serão enviadas para o Gemma sempre que ele
+    # precisar decidir se deve chamar alguma ferramenta.
+    #
+    # Exemplos de ferramentas descritas:
+    #
+    # - consultar_tarefas;
+    # - adicionar_tarefa;
+    # - concluir_tarefa;
+    # - consultar_agenda_hoje;
+    # - consultar_agenda_amanha.
+    #
+    # Carregamos isso uma vez antes do loop porque a lista de
+    # ferramentas não muda enquanto o programa está rodando.
+    # --------------------------------------------------------
+    descricoes_ferramentas = carregar_descricoes_ferramentas()
 
     # --------------------------------------------------------
     # Aqui começa um loop infinito.
@@ -127,30 +190,118 @@ def main():
             break
 
         # ----------------------------------------------------
-        # Se o usuário não digitou "sair", então vamos enviar
-        # a mensagem para a LLM.
+        # Agora vamos pedir para a LLM decidir se esta mensagem
+        # precisa chamar alguma ferramenta.
         #
-        # A função chamar_llm(...) recebe o texto digitado pelo
-        # usuário e devolve a resposta gerada pelo Gemma.
+        # Exemplos:
+        #
+        # "Liste minhas tarefas."
+        #   -> deve usar a ferramenta consultar_tarefas.
+        #
+        # "O que tenho hoje?"
+        #   -> deve usar a ferramenta consultar_agenda_hoje.
+        #
+        # "Explique rapidamente o que é uma LLM."
+        #   -> talvez não precise de ferramenta.
+        #
+        # A função recuperar_decisao_ferramenta(...) devolve um
+        # dicionário Python com a decisão da LLM.
+        #
+        # Exemplo:
+        #
+        # {
+        #     "usar_ferramenta": True,
+        #     "nome_ferramenta": "consultar_tarefas",
+        #     "entrada": {}
+        # }
         # ----------------------------------------------------
-        resposta = chamar_llm(mensagem)
+        decisao = recuperar_decisao_ferramenta(
+            mensagem_usuario=mensagem,
+            descricoes_ferramentas=descricoes_ferramentas
+        )
 
         # ----------------------------------------------------
-        # Aqui mostramos a resposta da LLM no terminal.
+        # Agora verificamos se a LLM decidiu usar uma ferramenta.
         #
-        # O f antes das aspas indica uma f-string.
+        # decisao.get("usar_ferramenta", False)
         #
-        # Uma f-string permite colocar variáveis dentro do texto
-        # usando chaves { }.
+        # significa:
         #
-        # Neste caso, {resposta} será substituído pelo texto que
-        # veio do Gemma.
+        # pegue o valor da chave "usar_ferramenta".
+        #
+        # Se essa chave não existir por algum motivo, use False
+        # como valor padrão.
         # ----------------------------------------------------
-        print(f"\nJARVIS: {resposta}")
+        if decisao.get("usar_ferramenta", False):
+            # ------------------------------------------------
+            # Se chegamos aqui, significa que a LLM decidiu que
+            # alguma ferramenta deve ser chamada.
+            #
+            # Agora recuperamos o nome da ferramenta escolhida.
+            #
+            # Exemplo:
+            #
+            # "consultar_tarefas"
+            # ------------------------------------------------
+            nome_ferramenta = decisao.get("nome_ferramenta")
 
+            # ------------------------------------------------
+            # Agora recuperamos a entrada que será enviada para a
+            # ferramenta.
+            #
+            # Exemplo para consultar_tarefas:
+            #
+            # {}
+            #
+            # Exemplo para adicionar_tarefa:
+            #
+            # {
+            #     "titulo": "Estudar RAG",
+            #     "descricao": ""
+            # }
+            # ------------------------------------------------
+            entrada = decisao.get("entrada", {})
 
+            # ------------------------------------------------
+            # Agora executamos a ferramenta escolhida.
+            #
+            # A função executar_ferramenta(...) faz várias coisas:
+            #
+            # 1. encontra a função Python correta;
+            # 2. executa essa função com a entrada recebida;
+            # 3. registra a chamada no log;
+            # 4. devolve a saída da ferramenta.
+            # ------------------------------------------------
+            resposta = executar_ferramenta(
+                nome_ferramenta=nome_ferramenta,
+                entrada=entrada
+            )
 
+            # ------------------------------------------------
+            # Mostramos ao usuário a resposta devolvida pela
+            # ferramenta.
+            # ------------------------------------------------
+            print(f"\nJARVIS: {resposta}")
 
+        else:
+            # ------------------------------------------------
+            # Se chegamos aqui, significa que a LLM decidiu que
+            # nenhuma ferramenta é necessária.
+            #
+            # Então usamos o comportamento antigo:
+            # mandamos a mensagem diretamente para o Gemma gerar
+            # uma resposta normal.
+            # ------------------------------------------------
+            resposta = chamar_llm(mensagem)
+
+            # ------------------------------------------------
+            # Mostramos a resposta normal da LLM no terminal.
+            # ------------------------------------------------
+            print(f"\nJARVIS: {resposta}")
+
+#endregion
+
+#region execução do programa
 # ------------------------------------------------------------
 # Esta parte indica que a função main() deve ser executada
 # quando rodarmos este arquivo diretamente.
@@ -159,7 +310,7 @@ def main():
 #
 # Se eu rodar:
 #
-# python src/main.py
+# python -m src.main
 #
 # então o Python executa o main().
 #
@@ -167,3 +318,5 @@ def main():
 # ------------------------------------------------------------
 if __name__ == "__main__":
     main()
+
+#endregion

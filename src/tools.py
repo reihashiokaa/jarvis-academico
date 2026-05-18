@@ -92,9 +92,9 @@ from src.agenda import (
 # Elas também serão disponibilizadas como ferramentas para a LLM.
 # ------------------------------------------------------------
 from src.tarefas import (
+    concluir_tarefa_por_descricao,
     consultar_tarefas,
-    adicionar_tarefa,
-    concluir_tarefa
+    adicionar_tarefa
 )
 
 
@@ -143,7 +143,7 @@ from src.logger import registrar_chamada_ferramenta
 # {
 #     "consultar_tarefas": consultar_tarefas,
 #     "adicionar_tarefa": adicionar_tarefa,
-#     "concluir_tarefa": concluir_tarefa
+#     "concluir_tarefa_por_descricao": concluir_tarefa_por_descricao
 # }
 #
 # A parte da esquerda é o nome da ferramenta em texto.
@@ -164,7 +164,7 @@ from src.logger import registrar_chamada_ferramenta
 # Tarefas:
 # - consultar_tarefas
 # - adicionar_tarefa
-# - concluir_tarefa
+# - concluir_tarefa_por_descricao
 # ------------------------------------------------------------
 def carregar_ferramentas_disponiveis() -> dict:
     # --------------------------------------------------------
@@ -210,11 +210,11 @@ def carregar_ferramentas_disponiveis() -> dict:
         #
         # - listar tarefas;
         # - adicionar tarefa;
-        # - concluir tarefa.
+        # - concluir tarefa por descrição;
         # ----------------------------------------------------
         "consultar_tarefas": consultar_tarefas,
         "adicionar_tarefa": adicionar_tarefa,
-        "concluir_tarefa": concluir_tarefa
+        "concluir_tarefa_por_descricao": concluir_tarefa_por_descricao
     }
 
     # --------------------------------------------------------
@@ -264,7 +264,7 @@ def carregar_ferramentas_disponiveis() -> dict:
 # {
 #     "consultar_tarefas": consultar_tarefas,
 #     "adicionar_tarefa": adicionar_tarefa,
-#     "concluir_tarefa": concluir_tarefa
+#     "concluir_tarefa_por_descricao": concluir_tarefa_por_descricao
 # }
 #
 # E recupera a função Python real:
@@ -297,7 +297,6 @@ def recuperar_ferramenta_por_nome(nome_ferramenta: str):
     #     "consultar_agenda_hoje": consultar_agenda_hoje,
     #     "consultar_tarefas": consultar_tarefas,
     #     "adicionar_tarefa": adicionar_tarefa,
-    #     "concluir_tarefa": concluir_tarefa
     # }
     # --------------------------------------------------------
     ferramentas = carregar_ferramentas_disponiveis()
@@ -386,7 +385,6 @@ def executar_ferramenta(nome_ferramenta: str, entrada: dict = None):
     #
     # "consultar_tarefas"
     # "adicionar_tarefa"
-    # "concluir_tarefa"
     # "consultar_agenda_hoje"
     #
     # Esse nome será usado para recuperar a função Python real.
@@ -409,11 +407,6 @@ def executar_ferramenta(nome_ferramenta: str, entrada: dict = None):
     #     "descricao": "Revisar chunking e embeddings"
     # }
     #
-    # Para concluir tarefa:
-    #
-    # {
-    #     "id_tarefa": 2
-    # }
     #
     # Usamos dict porque vamos passar os argumentos em formato de
     # dicionário.
@@ -574,5 +567,156 @@ def executar_ferramenta(nome_ferramenta: str, entrada: dict = None):
     # - uma mensagem dizendo que a ferramenta não foi encontrada.
     # --------------------------------------------------------
     return saida
+
+#endregion
+
+#region carregar_descricoes_ferramentas (intermediária, retorna lista com descrições das ferramentas disponíveis)
+
+# ------------------------------------------------------------
+# Função: carregar_descricoes_ferramentas
+# ------------------------------------------------------------
+# Esta função monta uma lista com as descrições das ferramentas
+# disponíveis no JARVIS.
+#
+# Esta é uma função intermediária.
+#
+# Isso significa que ela ajuda o sistema por dentro, mas não será
+# chamada diretamente pelo usuário final.
+#
+# Por que precisamos desta função?
+#
+# Porque a LLM precisa saber quais ferramentas existem antes de
+# decidir qual ferramenta chamar.
+#
+# A função carregar_ferramentas_disponiveis() cria um dicionário
+# que o Python usa para executar ferramentas.
+#
+# Já esta função cria uma descrição em texto/dados que será usada
+# para explicar as ferramentas para a LLM.
+#
+# Em outras palavras:
+#
+# carregar_ferramentas_disponiveis()
+#   -> ajuda o Python a executar ferramentas.
+#
+# carregar_descricoes_ferramentas()
+#   -> ajuda a LLM a entender quais ferramentas pode escolher.
+#
+# Cada ferramenta será descrita com:
+#
+# - nome;
+# - descrição;
+# - parâmetros esperados.
+#
+# Isso será útil no futuro prompt de decisão da LLM.
+# ------------------------------------------------------------
+def carregar_descricoes_ferramentas() -> list:
+    # --------------------------------------------------------
+    # Aqui criamos uma lista chamada descricoes.
+    #
+    # Cada item dessa lista será um dicionário representando uma
+    # ferramenta disponível.
+    #
+    # Cada dicionário terá informações úteis para a LLM:
+    #
+    # - nome da ferramenta;
+    # - quando usar essa ferramenta;
+    # - quais parâmetros essa ferramenta espera receber.
+    # --------------------------------------------------------
+    descricoes = [
+        # ----------------------------------------------------
+        # Ferramenta: consultar_agenda_por_data
+        #
+        # Essa ferramenta consulta compromissos de uma data
+        # específica.
+        # ----------------------------------------------------
+        {
+            "nome": "consultar_agenda_por_data",
+            "descricao": "Use quando o usuário quiser consultar compromissos de uma data específica.",
+            "parametros": {
+                "data_consultada": "Data no formato AAAA-MM-DD. Exemplo: 2026-05-15."
+            }
+        },
+
+        # ----------------------------------------------------
+        # Ferramenta: consultar_agenda_hoje
+        #
+        # Essa ferramenta consulta automaticamente a agenda de hoje.
+        # ----------------------------------------------------
+        {
+            "nome": "consultar_agenda_hoje",
+            "descricao": "Use quando o usuário perguntar o que tem hoje, se tem algo hoje ou quais são os compromissos de hoje.",
+            "parametros": {}
+        },
+
+        # ----------------------------------------------------
+        # Ferramenta: consultar_agenda_amanha
+        #
+        # Essa ferramenta consulta automaticamente a agenda de amanhã.
+        # ----------------------------------------------------
+        {
+            "nome": "consultar_agenda_amanha",
+            "descricao": "Use quando o usuário perguntar o que tem amanhã, se tem algo amanhã ou se tem prova amanhã.",
+            "parametros": {}
+        },
+
+        # ----------------------------------------------------
+        # Ferramenta: consultar_agenda_semana_atual
+        #
+        # Essa ferramenta consulta compromissos da semana atual.
+        # ----------------------------------------------------
+        {
+            "nome": "consultar_agenda_semana_atual",
+            "descricao": "Use quando o usuário perguntar o que tem esta semana, quais são as aulas da semana ou quais compromissos tem na semana atual.",
+            "parametros": {}
+        },
+
+        # ----------------------------------------------------
+        # Ferramenta: consultar_tarefas
+        #
+        # Essa ferramenta lista as tarefas cadastradas.
+        # ----------------------------------------------------
+        {
+            "nome": "consultar_tarefas",
+            "descricao": "Use quando o usuário quiser listar, ver ou consultar as tarefas cadastradas.",
+            "parametros": {}
+        },
+
+        # ----------------------------------------------------
+        # Ferramenta: adicionar_tarefa
+        #
+        # Essa ferramenta adiciona uma nova tarefa.
+        # ----------------------------------------------------
+        {
+            "nome": "adicionar_tarefa",
+            "descricao": "Use quando o usuário quiser adicionar, criar, anotar ou registrar uma nova tarefa.",
+            "parametros": {
+                "titulo": "Título principal da tarefa.",
+                "descricao": "Descrição opcional da tarefa. Se não houver descrição, use uma string vazia."
+            }
+        },
+        
+        # ----------------------------------------------------
+        # Ferramenta: concluir_tarefa_por_descricao
+        #
+        # Essa ferramenta marca uma tarefa como concluída a partir
+        # de uma descrição textual dada pelo usuário.
+        # ----------------------------------------------------
+        {
+            "nome": "concluir_tarefa_por_descricao",
+            "descricao": "Use quando o usuário quiser concluir, finalizar, marcar como feita ou dizer que terminou uma tarefa. A entrada deve ser uma descrição textual da tarefa mencionada pelo usuário.",
+            "parametros": {
+                "descricao_tarefa": "Descrição textual da tarefa que o usuário quer concluir. Exemplo: terminar o trabalho de ia."
+            }
+        }
+    ]
+
+    # --------------------------------------------------------
+    # Por fim, devolvemos a lista de descrições.
+    #
+    # Essa lista será usada depois para montar o prompt que pede
+    # para a LLM decidir qual ferramenta deve ser chamada.
+    # --------------------------------------------------------
+    return descricoes
 
 #endregion
