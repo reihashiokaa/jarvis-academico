@@ -51,4 +51,4 @@ python-dotenv
 # Ele permite converter textos, imagens e áudio em vetores 
 # numéricos densos de tamanho fixo.
 # ------------------------------------------------------------
-sentence-transforms
+sentence-transformers
