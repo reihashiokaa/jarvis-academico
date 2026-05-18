@@ -236,6 +236,10 @@ Comando para testar uma pergunta que não precisa de ferramenta:
 
 python -c "from src.llm_client import recuperar_decisao_ferramenta; from src.tools import carregar_descricoes_ferramentas; descricoes = carregar_descricoes_ferramentas(); print(recuperar_decisao_ferramenta('Explique rapidamente o que é uma LLM.', descricoes))"
 
+Comando para testar conclusão de tarefa por descrição:
+
+python -c "from src.llm_client import recuperar_decisao_ferramenta; from src.tools import carregar_descricoes_ferramentas; descricoes = carregar_descricoes_ferramentas(); print(recuperar_decisao_ferramenta('conclua a tarefa de terminar o trabalho de ia', descricoes))"
+
 ============================================================
 09. TESTAR A FUNÇÃO decidir_tarefa_por_descricao() do arquivo llm_client.py
 ============================================================
