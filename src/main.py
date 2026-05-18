@@ -15,10 +15,8 @@
 # O usuário digita uma mensagem, o sistema envia essa mensagem
 # para a LLM e depois mostra a resposta na tela.
 # ============================================================
-#endregion
-
-#region importações
-
+#
+#
 # ------------------------------------------------------------
 # Importamos a função chamar_llm.
 #
