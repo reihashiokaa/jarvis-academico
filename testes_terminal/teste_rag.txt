@@ -1,0 +1,3 @@
+python -c "from src.rag import carregar_texto_pdf; print(carregar_texto_pdf('.\data\materiais\TADS - Revisão Padrões de Design.pdf'))"
+
+python -c "from src.rag import carregar_documentos; print(carregar_documentos())"
