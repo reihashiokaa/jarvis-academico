@@ -3,3 +3,7 @@ python -c "from src.rag import carregar_texto_pdf; print(carregar_texto_pdf('.\d
 python -c "from src.rag import carregar_documentos; print(carregar_documentos())"
 
 python -c "from src.rag import dividir_texto_em_chunks; print(dividir_texto_em_chunks('Regressão logística é um algoritmo estatístico e de aprendizado de máquina', 10, 5))"
+
+python -c "from src.rag import carregar_chunks_documentos; print(carregar_chunks_documentos())"
+
+python -c "from src.rag import gerar_embeddings_chunks, carregar_chunks_documentos; print(gerar_embeddings_chunks(carregar_chunks_documentos()))"
