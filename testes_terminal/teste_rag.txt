@@ -1,3 +1,5 @@
 python -c "from src.rag import carregar_texto_pdf; print(carregar_texto_pdf('.\data\materiais\TADS - Revisão Padrões de Design.pdf'))"
 
 python -c "from src.rag import carregar_documentos; print(carregar_documentos())"
+
+python -c "from src.rag import dividir_texto_em_chunks; print(dividir_texto_em_chunks('Regressão logística é um algoritmo estatístico e de aprendizado de máquina', 10, 5))"

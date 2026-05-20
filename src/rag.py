@@ -685,3 +685,110 @@ def carregar_documentos():
     # --------------------------------------------------------
     return documentos
 #endregion
+
+#region dividir_texto_em_chunks (intermediária, retorna uma lista de chunks do texto fornecido)
+
+# ------------------------------------------------------------
+# Função: dividir_texto_em_chunks
+# ------------------------------------------------------------
+# Esta função recebe um texto em formato de string e retorna
+# uma lista de chunks de tamanho fixo desse texto, isto é,
+# uma lista com pedaços menores do texto.
+#
+# O tamanho do pedaço do chunk e da sobreposição são passados por
+# parâmetro, onde:
+#  
+#  - tamanho_chunk recebe um valor inteiro que define o tamanho
+#  desses pedaços menores de texto, contando os caracteres da
+#  da string.
+#
+#  - sobreposicao recebe um valor inteiro que define quantos caracteres
+#  se repetem entre um chunk e o próximo.
+#
+# Exemplo:
+#
+# texto = "Regressão logística é um algoritmo estatístico e de
+# aprendizado de máquina"
+#
+# tamanho_chunk = 10 e sobreposicao = 5
+#
+# ['Regressão ', 'ssão logística ', 'tica é um algor',
+# 'algoritmo estat', 'estatístico e d', 'o e de aprendiz',
+# 'endizado de máq', 'e máquina']
+#
+# Se o texto for uma string vazia, será retornado uma lista vazia.
+# ------------------------------------------------------------
+def dividir_texto_em_chunks(texto, tamanho_chunk: int, sobreposicao: int):
+    # --------------------------------------------------------
+    # Aqui inicializamos as variáveis que serão utilizadas para
+    # realizar a divisão dos chunks, no qual:
+    # 
+    #  - chunk_inicio: define o índice da string em que um chunk inicia.
+    #  - chunk_fim: define o índice da string que o chunk termina.
+    # --------------------------------------------------------
+    chunk_inicio = 0
+    chunk_fim = 0
+    
+    # --------------------------------------------------------
+    # Inicializa uma lista vazia para adicionarmos os chunks
+    # extraídos do texto.
+    # --------------------------------------------------------
+    lista_chunks = []
+    
+    # --------------------------------------------------------
+    # Para extrair os chunks, iteramos sobre os caracteres do
+    # texto, com passos de tamanho igual ao tamanho_chunk.
+    # --------------------------------------------------------
+    while chunk_fim < len(texto):
+        # --------------------------------------------------------
+        # Verificamos se o índice final do chunk somado ao tamanho
+        # do próximo chunk (passo) não ultrapassa o tamanho do texto.
+        #
+        # Se ultrapassar, o índice final do próximo chunk é equivalente
+        # ao índice final do texto.
+        # --------------------------------------------------------
+        if chunk_fim + tamanho_chunk > len(texto):
+            chunk_fim = len(texto)
+            
+        # --------------------------------------------------------
+        # Caso contrário, o índice final do próximo chunk é igual
+        # ao índice final do chunk atual somado ao tamanho do chunk.
+        # --------------------------------------------------------
+        else:
+            chunk_fim += tamanho_chunk
+        
+        # --------------------------------------------------------
+        # Aqui 'recortamos' o chunk do texto por meio do fatiamento,
+        # no qual:
+        #
+        #  - lista_chunks.append adiciona o chunk extraído na lista.
+        #
+        #  - texto[:] fatia um pedaço específico da string, em que
+        #  o número a esquerda do ':' sinaliza a partir de qual índice
+        #  será realizado o recorte e o valor a direita até qual
+        #  índice esse recorte vai.
+        #
+        #  - max(0, chunk_inicio - sobreposicao) pega o maior valor
+        #  entre 0 e o índice incial do chunk menos a quantidade
+        #  de sobreposição, por exemplo, se o índice inicial é 0 e
+        #  a sobreposição é 100, então ficaria max(0, -100), assim
+        #  retornando 0, já que 0 é maior que um valor negativo.
+        #  Foi realizado este tratamento por causa que o fatiamento
+        #  do python aceita valores negativos sem lançar um erro de
+        #  list index out of range, em seu lugar ele inverte a direção
+        #  de leitura, lendo da direita para a esquerda.
+        # --------------------------------------------------------
+        lista_chunks.append(texto[max(0, chunk_inicio - sobreposicao):chunk_fim])
+        
+        # --------------------------------------------------------
+        # Aqui avançamos o valor do chunk_inicial somando com o valor
+        # de tamanho_chunk, que basicamente é o tamanho do passo
+        # que damos ao andar sobre o texto.
+        # --------------------------------------------------------
+        chunk_inicio += tamanho_chunk
+    
+    # --------------------------------------------------------
+    # Por fim retornamos a lista com os chunks do texto separados.
+    # --------------------------------------------------------
+    return lista_chunks
+#endregion
