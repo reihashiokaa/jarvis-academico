@@ -83,6 +83,18 @@ from pypdf import PdfReader
 # ------------------------------------------------------------
 import re
 
+# ------------------------------------------------------------
+# Importamos SentenceTransformer da biblioteca sentence-transformers.
+#
+# SentenceTransformer é uma classe que carrega um modelo de embeddings
+# e transforma textos em vetores numéricos.
+#
+# Internamente, ele baixa o modelo pré-treinado da internet (caso não
+# ainda não esteja disponível localmente), carrega esse modelo na memória
+# e utiliza redes neurais para deixá-lo pronto para inferência.
+# ------------------------------------------------------------
+from sentence_transformers import SentenceTransformer
+
 #endregion
 
 #region caminho da pasta com materiais de consulta
@@ -597,11 +609,11 @@ def carregar_texto_documento(caminho_documento):
 #
 # [
 #   {
-#     "arquivo": "aula_embeddings.pdf",
+#     "nome": "aula_embeddings.pdf",
 #     "conteudo": "conteúdo extraído do arquivo..."
 #   },
 #   {
-#     "arquivo": "resumo_rag.txt",
+#     "nome": "resumo_rag.txt",
 #     "conteudo": "conteúdo extraído do arquivo"
 #   }
 # ]
@@ -669,7 +681,7 @@ def carregar_documentos():
             #  - texto é o conteúdo extraído e formatado do documento.
             # --------------------------------------------------------
             documento_dic = {
-                "arquivo": caminho_doc.name,
+                "nome": caminho_doc.name,
                 "conteudo": texto
             }
             
@@ -684,4 +696,258 @@ def carregar_documentos():
     # documentos, caso contrário retorna uma lista vazia.
     # --------------------------------------------------------
     return documentos
+#endregion
+
+#region dividir_texto_em_chunks (intermediária, retorna uma lista de chunks do texto fornecido)
+
+# ------------------------------------------------------------
+# Função: dividir_texto_em_chunks
+# ------------------------------------------------------------
+# Esta função recebe um texto em formato de string e retorna
+# uma lista de chunks de tamanho fixo desse texto, isto é,
+# uma lista com pedaços menores do texto.
+#
+# O tamanho do pedaço do chunk e da sobreposição são passados por
+# parâmetro, onde:
+#  
+#  - tamanho_chunk recebe um valor inteiro que define o tamanho
+#  desses pedaços menores de texto, contando os caracteres da
+#  da string.
+#
+#  - sobreposicao recebe um valor inteiro que define quantos caracteres
+#  se repetem entre um chunk e o próximo.
+#
+# Exemplo:
+#
+# texto = "Regressão logística é um algoritmo estatístico e de
+# aprendizado de máquina"
+#
+# tamanho_chunk = 10 e sobreposicao = 5
+#
+# ['Regressão ', 'ssão logística ', 'tica é um algor',
+# 'algoritmo estat', 'estatístico e d', 'o e de aprendiz',
+# 'endizado de máq', 'e máquina']
+#
+# Se o texto for uma string vazia, será retornado uma lista vazia.
+# ------------------------------------------------------------
+def dividir_texto_em_chunks(texto, tamanho_chunk=800, sobreposicao=100):
+    # --------------------------------------------------------
+    # Aqui inicializamos as variáveis que serão utilizadas para
+    # realizar a divisão dos chunks, no qual:
+    # 
+    #  - chunk_inicio: define o índice da string em que um chunk inicia.
+    #  - chunk_fim: define o índice da string que o chunk termina.
+    # --------------------------------------------------------
+    chunk_inicio = 0
+    chunk_fim = 0
+    
+    # --------------------------------------------------------
+    # Inicializa uma lista vazia para adicionarmos os chunks
+    # extraídos do texto.
+    # --------------------------------------------------------
+    lista_chunks = []
+    
+    # --------------------------------------------------------
+    # Para extrair os chunks, iteramos sobre os caracteres do
+    # texto, com passos de tamanho igual ao tamanho_chunk.
+    # --------------------------------------------------------
+    while chunk_fim < len(texto):
+        # --------------------------------------------------------
+        # Verificamos se o índice final do chunk somado ao tamanho
+        # do próximo chunk (passo) não ultrapassa o tamanho do texto.
+        #
+        # Se ultrapassar, o índice final do próximo chunk é equivalente
+        # ao índice final do texto.
+        # --------------------------------------------------------
+        if chunk_fim + tamanho_chunk > len(texto):
+            chunk_fim = len(texto)
+            
+        # --------------------------------------------------------
+        # Caso contrário, o índice final do próximo chunk é igual
+        # ao índice final do chunk atual somado ao tamanho do chunk.
+        # --------------------------------------------------------
+        else:
+            chunk_fim += tamanho_chunk
+        
+        # --------------------------------------------------------
+        # Aqui 'recortamos' o chunk do texto por meio do fatiamento,
+        # no qual:
+        #
+        #  - lista_chunks.append adiciona o chunk extraído na lista.
+        #
+        #  - texto[:] fatia um pedaço específico da string, em que
+        #  o número a esquerda do ':' sinaliza a partir de qual índice
+        #  será realizado o recorte e o valor a direita até qual
+        #  índice esse recorte vai.
+        #
+        #  - max(0, chunk_inicio - sobreposicao) pega o maior valor
+        #  entre 0 e o índice incial do chunk menos a quantidade
+        #  de sobreposição, por exemplo, se o índice inicial é 0 e
+        #  a sobreposição é 100, então ficaria max(0, -100), assim
+        #  retornando 0, já que 0 é maior que um valor negativo.
+        #  Foi realizado este tratamento por causa que o fatiamento
+        #  do python aceita valores negativos sem lançar um erro de
+        #  list index out of range, em seu lugar ele inverte a direção
+        #  de leitura, lendo da direita para a esquerda.
+        # --------------------------------------------------------
+        lista_chunks.append(texto[max(0, chunk_inicio - sobreposicao):chunk_fim])
+        
+        # --------------------------------------------------------
+        # Aqui avançamos o valor do chunk_inicial somando com o valor
+        # de tamanho_chunk, que basicamente é o tamanho do passo
+        # que damos ao andar sobre o texto.
+        # --------------------------------------------------------
+        chunk_inicio += tamanho_chunk
+    
+    # --------------------------------------------------------
+    # Por fim retornamos a lista com os chunks do texto separados.
+    # --------------------------------------------------------
+    return lista_chunks
+#endregion
+
+#region carregar_chunks_documentos (intermediária, retorna uma lista com os chunks de todos os documentos)
+
+# ------------------------------------------------------------
+# Função: carregar_chunks_documentos
+# ------------------------------------------------------------
+# Esta função lê todos os documentos e retorna os seus respectivos
+# chunks como uma lista de dicionários, onde cada dicionário guardará
+# os seguintes dados:
+#
+# - id do chunk;
+# - nome do arquivo de origem;
+# - texto do chunk;
+#
+# Poderá ser retornado uma lista vazia caso não apresente nenhum
+# documento.
+# ------------------------------------------------------------
+def carregar_chunks_documentos():
+    # --------------------------------------------------------
+    # Inicializa uma lista vazia para adicionarmos os chunks e
+    # seus dados posteiormente.
+    #
+    # Adicionalmente, é inicializado um índice para os ids.
+    # --------------------------------------------------------
+    lista_chunks= []
+    id = 0
+
+    # --------------------------------------------------------
+    # Aqui chamamos a função carregar_documentos que lê todos
+    # os documentos e retorna uma lista de dicionários com os
+    # textos extraídos, seguindo o formato:
+    #
+    # {
+    #   "nome": "Nome do Arquivo",
+    #   "conteudo": "Texto extraído do arquivo"
+    # }
+    # --------------------------------------------------------
+    documentos = carregar_documentos()
+
+    # --------------------------------------------------------
+    # Iteramos sobre a lista dos documentos.
+    #
+    # for documento in documentos indica:
+    # "Para cada documento execute o seguinte bloco de código
+    # abaixo."
+    # --------------------------------------------------------
+    for documento in documentos:
+        # --------------------------------------------------------
+        # Iteramos também sobre a lista de chunks de cada documento.
+        #
+        # dividir_texto_em_chunks retorna a lista de chunks do texto
+        # passado por parâmetro, que nesse caso é o texto do documento,
+        # associado pela chave 'conteudo' no dicionário, lembrando
+        # que documento é um elemento em formato de dicionário da
+        # lista de documentos.
+        #
+        # Então, para cada chunk da lista, executamos o bloco de
+        # código abaixo.
+        # --------------------------------------------------------
+        for chunk in dividir_texto_em_chunks(documento["conteudo"]):
+            # --------------------------------------------------------
+            # Nesta parte organizamos os dados de um chunk como um dicionário,
+            # guardando um valor de identificação (id), o nome do arquivo
+            # o qual ele pertence (arquivo_origem) e o texto desse chunk
+            # (texto_chunk).
+            #
+            # Essas informações de rastreabilidade são importantes, pois 
+            # quando o sistema recuperar um trecho, será necessário saber
+            # de qual documento ele veio.
+            # --------------------------------------------------------
+            chunk_data = {
+                "id":id,
+                "arquivo_origem":documento["nome"],
+                "texto_chunk":chunk
+            }
+
+            # --------------------------------------------------------
+            # Adicionamos o dicionário com os dados do chunk na lista
+            # de chunks.
+            # --------------------------------------------------------
+            lista_chunks.append(chunk_data)
+
+            # --------------------------------------------------------
+            # Incrementamos o id.
+            # --------------------------------------------------------
+            id += 1
+
+    # --------------------------------------------------------
+    # Por fim retornamos a lista de chunks, que poderá ser vazia
+    # caso não apresente nenhum documento.
+    # --------------------------------------------------------
+    return lista_chunks
+#endregion
+
+#region carregar_modelo_embeddings (intermediária, carrega o modelo que transforma um texto em vetor)
+
+# ------------------------------------------------------------
+# Função: carregar_modelo_embeddings
+# ------------------------------------------------------------
+# Esta função carrega o modelo que transforma texto em vetor.
+# ------------------------------------------------------------
+def carregar_modelo_embeddings():
+    # ------------------------------------------------------------
+    # Carrega o modelo pré-treinado que pode ser utilizado para mapear
+    # um texto e outras entradas em embeddings densos.
+    #
+    # Embeddings densos são representações numéricas de dados (como
+    # palavras, frases ou imagens) em formato de vetores, onde a
+    # maioria das posições contém valores diferentes de zero. Eles
+    # codificam o significado semântico e o contexto profundo dessas
+    # informações, agrupando itens com conceitos semelhantes em um
+    # espaço n-dimensional.
+    # ------------------------------------------------------------
+    modelo = SentenceTransformer("sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2")
+
+    # ------------------------------------------------------------
+    # Retorna o modelo.
+    # ------------------------------------------------------------
+    return modelo
+#endregion
+
+#region gerar_embeddings_chunks (intermediária, retorna uma lista com os embeddings dos chunks)
+
+# ------------------------------------------------------------
+# Função: gerar_embeddings_chunks
+# ------------------------------------------------------------
+# Esta função recebe uma lista de chunks e gera um vetor (embedding)
+# para cada chunk.
+#
+# Retorna uma lista de chunks e a lista de embeddings,
+# com cada chunk sendo organizado por meio de dicionários
+# da seguinte forma:
+# 
+# - id do chunk (id_chunk)
+# - Texto do chunk (texto_chunk)
+# ------------------------------------------------------------
+def gerar_embeddings_chunks(chunks):
+    modelo = carregar_modelo_embeddings()
+    lista_textos = [chunk["texto_chunk"] for chunk in chunks]
+
+    embeddings = modelo.encode(lista_textos)
+
+    if len(embeddings) != len(chunks):
+        raise ValueError("Quantidade de embeddings diferente da quantidade de chunks.")
+
+    return chunks, embeddings
 #endregion

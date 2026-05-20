@@ -5,5 +5,12 @@
     "hora": "19:00",
     "tipo": "aula",
     "descricao": "Aula sobre assistentes inteligentes e uso de LLM."
+  },
+  {
+    "titulo": "Aula de Redes",
+    "data": "2026-05-18",
+    "hora": "19:00",
+    "tipo": "aula",
+    "descricao": "Aula sobre camada de enlace"
   }
 ]
