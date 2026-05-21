@@ -969,19 +969,31 @@ def gerar_embeddings_chunks(chunks):
 # ------------------------------------------------------------
 # Função: gerar_embedding_pergunta
 # ------------------------------------------------------------
-# 
+# Esta função recebe uma pergunta em formato string e a transforma
+# em um vetor.
 # ------------------------------------------------------------
 def gerar_embedding_pergunta(pergunta: str):
+    # ------------------------------------------------------------
+    # Chama a função carregar_modelo_embedding para obter o modelo
+    # que será utilizado para transformar o texto em vetor.
+    # ------------------------------------------------------------
     modelo = carregar_modelo_embeddings()
     
+    # ------------------------------------------------------------
+    # Verifica se a string não está vazia. Lembrando que uma string
+    # "" é considerada como False.
+    # ------------------------------------------------------------
     if pergunta:
+        # ------------------------------------------------------------
+        # Se a string não for vazia transforma a pergunta em um vetor
+        # a partir do modelo.
+        # ------------------------------------------------------------
         embedding_pergunta = modelo.encode(pergunta, convert_to_numpy=True, normalize_embeddings=True)
         return embedding_pergunta
         
     else:
         print("Informe uma pergunta válida")
-        return []
-        
+        return [] 
 #endregion
 
 #region calcular_similaridade_cosseno (intermediária, )
@@ -1057,4 +1069,54 @@ def recuperar_chunks_relevantes(pergunta, quantidade=3):
     # 7. Retornar top-k
     # ------------------------------------------------------------
     return resultados_ordenados[:quantidade]
+#endregion
+
+#region formatar_chunks_recuperados (intermediária, )
+
+# ------------------------------------------------------------
+# Função: formatar_chunks_recuperados
+# ------------------------------------------------------------
+# 
+# ------------------------------------------------------------
+def formatar_chunks_recuperados(chunks):
+    texto_formatado = ""
+    
+    for trecho_num, chunk in enumerate(chunks):
+        arquivo = chunk.get("nome_arquivo")
+        texto_chunk = chunk.get("texto")
+        
+        texto_formatado += f"Trecho {trecho_num}\nFonte: {arquivo}\nTexto: {texto_chunk}"
+        
+        if trecho_num != len(chunks) - 1:
+            texto_formatado += "\n\n"
+        
+    return texto_formatado
+#endregion
+
+#region gerar_resposta_com_contexto (intermediária, )
+
+# ------------------------------------------------------------
+# Função: gerar_resposta_com_contexto
+# ------------------------------------------------------------
+# 
+# ------------------------------------------------------------
+def gerar_resposta_com_contexto(pergunta: str, contexto: str):
+    prompt = f"{pergunta}\n\n" + "Responda usando apenas ou principalmente os trechos fornecidos.\n\n" + contexto + "\n\nSe os trechos não forem suficientes, diga que o material não contém informação suficiente."
+        
+    return prompt
+#endregion
+
+#region consultar_material_rag (final, )
+
+# ------------------------------------------------------------
+# Função: consultar_material_rag
+# ------------------------------------------------------------
+# 
+# ------------------------------------------------------------
+def consultar_material_rag(pergunta: str) -> str:
+    chunks = recuperar_chunks_relevantes(pergunta)
+    contexto = formatar_chunks_recuperados(chunks)
+    prompt = gerar_resposta_com_contexto(pergunta, contexto)
+    
+    return prompt
 #endregion
