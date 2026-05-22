@@ -953,7 +953,12 @@ def carregar_modelo_embeddings():
 # - Texto do chunk (texto_chunk)
 # ------------------------------------------------------------
 def gerar_embeddings_chunks(chunks):
+    if not chunks:
+        print("Não foi possível gerar embeddings.")
+        return chunks, []
+    
     modelo = carregar_modelo_embeddings()
+    
     lista_textos = [chunk["texto_chunk"] for chunk in chunks]
 
     embeddings = modelo.encode(lista_textos, convert_to_numpy=True, normalize_embeddings=True)
@@ -1038,6 +1043,10 @@ def recuperar_chunks_relevantes(pergunta, quantidade=3):
     # ------------------------------------------------------------
     # 4. Calcular similaridade (um por um)
     # ------------------------------------------------------------
+    if not embeddings_chunks or not embedding_pergunta:
+        print("Não é possível calcular similaridades.")
+        return []
+    
     similaridades = [
         calcular_similaridade_cosseno(embedding_pergunta, emb)
         for emb in embeddings_chunks
