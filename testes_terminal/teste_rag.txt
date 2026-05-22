@@ -7,3 +7,13 @@ python -c "from src.rag import dividir_texto_em_chunks; print(dividir_texto_em_c
 python -c "from src.rag import carregar_chunks_documentos; print(carregar_chunks_documentos())"
 
 python -c "from src.rag import gerar_embeddings_chunks, carregar_chunks_documentos; print(gerar_embeddings_chunks(carregar_chunks_documentos()))"
+
+python -c "from src.rag import gerar_embedding_pergunta; print(gerar_embedding_pergunta('O que é RAG?'))"
+
+python -c "from src.rag import recuperar_chunks_relevantes; print(recuperar_chunks_relevantes('O que são padrões de projeto?'))"
+
+python -c "from src.rag import carregar_modelo_embeddings, gerar_embeddings_chunks, calcular_similaridade_cosseno; modelo = carregar_modelo_embeddings(); chunks=[{'id_chunk':1,'texto_chunk':'Embeddings são vetores'},{'id_chunk':2,'texto_chunk':'RAG combina recuperação'}]; chunks, embeddings = gerar_embeddings_chunks(chunks); pergunta = modelo.encode('O que é RAG?'); sims = [calcular_similaridade_cosseno(pergunta, e) for e in embeddings]; print(sims)"
+
+python -c "from src.rag import recuperar_chunks_relevantes, formatar_chunks_recuperados; print(formatar_chunks_recuperados(recuperar_chunks_relevantes('O que são padrões de projeto?')))"
+
+python -c "from src.rag import consultar_material_rag; print(consultar_material_rag('O que são padrões de projeto?'))"

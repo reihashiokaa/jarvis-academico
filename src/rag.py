@@ -39,6 +39,12 @@
 
 #region importações
 # ------------------------------------------------------------
+# 
+# ------------------------------------------------------------
+import numpy as np
+
+
+# ------------------------------------------------------------
 # Importamos Path da biblioteca pathlib.
 #
 # O Path ajuda a trabalhar com caminhos de arquivos e pastas.
@@ -83,6 +89,7 @@ from pypdf import PdfReader
 # ------------------------------------------------------------
 import re
 
+
 # ------------------------------------------------------------
 # Importamos SentenceTransformer da biblioteca sentence-transformers.
 #
@@ -95,6 +102,11 @@ import re
 # ------------------------------------------------------------
 from sentence_transformers import SentenceTransformer
 
+
+# ------------------------------------------------------------
+# 
+# ------------------------------------------------------------
+from sklearn.metrics.pairwise import cosine_similarity
 #endregion
 
 #region caminho da pasta com materiais de consulta
@@ -941,13 +953,179 @@ def carregar_modelo_embeddings():
 # - Texto do chunk (texto_chunk)
 # ------------------------------------------------------------
 def gerar_embeddings_chunks(chunks):
+    if not chunks:
+        print("Não foi possível gerar embeddings.")
+        return chunks, []
+    
     modelo = carregar_modelo_embeddings()
+    
     lista_textos = [chunk["texto_chunk"] for chunk in chunks]
 
-    embeddings = modelo.encode(lista_textos)
+    embeddings = modelo.encode(lista_textos, convert_to_numpy=True, normalize_embeddings=True)
 
     if len(embeddings) != len(chunks):
         raise ValueError("Quantidade de embeddings diferente da quantidade de chunks.")
 
     return chunks, embeddings
+#endregion
+
+#region gerar_embedding_pergunta (intermediária, retorna um vetor da pergunta)
+
+# ------------------------------------------------------------
+# Função: gerar_embedding_pergunta
+# ------------------------------------------------------------
+# Esta função recebe uma pergunta em formato string e a transforma
+# em um vetor.
+# ------------------------------------------------------------
+def gerar_embedding_pergunta(pergunta: str):
+    # ------------------------------------------------------------
+    # Chama a função carregar_modelo_embedding para obter o modelo
+    # que será utilizado para transformar o texto em vetor.
+    # ------------------------------------------------------------
+    modelo = carregar_modelo_embeddings()
+    
+    # ------------------------------------------------------------
+    # Verifica se a string não está vazia. Lembrando que uma string
+    # "" é considerada como False.
+    # ------------------------------------------------------------
+    if pergunta:
+        # ------------------------------------------------------------
+        # Se a string não for vazia transforma a pergunta em um vetor
+        # a partir do modelo.
+        # ------------------------------------------------------------
+        embedding_pergunta = modelo.encode(pergunta, convert_to_numpy=True, normalize_embeddings=True)
+        return embedding_pergunta
+        
+    else:
+        print("Informe uma pergunta válida")
+        return [] 
+#endregion
+
+#region calcular_similaridade_cosseno (intermediária, )
+
+# ------------------------------------------------------------
+# Função: calcular_similaridade_cosseno
+# ------------------------------------------------------------
+# 
+# ------------------------------------------------------------
+def calcular_similaridade_cosseno(vetor_a: list, vetor_b: list):
+    vetor_a = [vetor_a]
+    vetor_b = [vetor_b]
+
+    similaridade = cosine_similarity(vetor_a, vetor_b)
+
+    return similaridade[0]
+#endregion
+
+#region recuperar_chunks_relevantes (intermediária, )
+
+# ------------------------------------------------------------
+# Função: recuperar_chunks_relevantes
+# ------------------------------------------------------------
+# 
+# ------------------------------------------------------------
+def recuperar_chunks_relevantes(pergunta, quantidade=3):
+    # ------------------------------------------------------------
+    # 1. Carregar chunks
+    # ------------------------------------------------------------
+    chunks = carregar_chunks_documentos()
+
+    # ------------------------------------------------------------
+    # 2. Gerar embeddings dos chunks
+    # ------------------------------------------------------------
+    chunks, embeddings_chunks = gerar_embeddings_chunks(chunks)
+
+    # ------------------------------------------------------------
+    # 3. Gerar embedding da pergunta
+    # ------------------------------------------------------------
+    embedding_pergunta = gerar_embedding_pergunta(pergunta)
+
+    # ------------------------------------------------------------
+    # 4. Calcular similaridade (um por um)
+    # ------------------------------------------------------------
+    if not embeddings_chunks or not embedding_pergunta:
+        print("Não é possível calcular similaridades.")
+        return []
+    
+    similaridades = [
+        calcular_similaridade_cosseno(embedding_pergunta, emb)
+        for emb in embeddings_chunks
+    ]
+
+    # ------------------------------------------------------------
+    # 5. Montar resultados
+    # ------------------------------------------------------------
+    resultados = []
+
+    for i, chunk in enumerate(chunks):
+        resultados.append({
+            "id_chunk": chunk["id"],
+            "nome_arquivo": chunk.get("arquivo_origem", ""),
+            "texto": chunk["texto_chunk"],
+            "similaridade": float(similaridades[i])
+        })
+
+    # ------------------------------------------------------------
+    # 6. Ordenar por relevância
+    # ------------------------------------------------------------
+    resultados_ordenados = sorted(
+        resultados,
+        key=lambda x: x["similaridade"],
+        reverse=True
+    )
+
+    # ------------------------------------------------------------
+    # 7. Retornar top-k
+    # ------------------------------------------------------------
+    return resultados_ordenados[:quantidade]
+#endregion
+
+#region formatar_chunks_recuperados (intermediária, )
+
+# ------------------------------------------------------------
+# Função: formatar_chunks_recuperados
+# ------------------------------------------------------------
+# 
+# ------------------------------------------------------------
+def formatar_chunks_recuperados(chunks):
+    texto_formatado = ""
+    
+    for trecho_num, chunk in enumerate(chunks):
+        arquivo = chunk.get("nome_arquivo")
+        texto_chunk = chunk.get("texto")
+        
+        texto_formatado += f"Trecho {trecho_num}\nFonte: {arquivo}\nTexto: {texto_chunk}"
+        
+        if trecho_num != len(chunks) - 1:
+            texto_formatado += "\n\n"
+        
+    return texto_formatado
+#endregion
+
+#region gerar_resposta_com_contexto (intermediária, )
+
+# ------------------------------------------------------------
+# Função: gerar_resposta_com_contexto
+# ------------------------------------------------------------
+# 
+# ------------------------------------------------------------
+def gerar_resposta_com_contexto(pergunta: str, contexto: str):
+    prompt = f"{pergunta}\n\n" + "Responda usando apenas ou principalmente os trechos fornecidos.\n\n" + contexto + "\n\nSe os trechos não forem suficientes, diga que o material não contém informação suficiente."
+        
+    return prompt
+#endregion
+
+#region consultar_material_rag (final, )
+
+# ------------------------------------------------------------
+# Função: consultar_material_rag
+# ------------------------------------------------------------
+# 
+# ------------------------------------------------------------
+def consultar_material_rag(pergunta: str) -> str:
+    chunks = recuperar_chunks_relevantes(pergunta)
+    contexto = formatar_chunks_recuperados(chunks)
+    prompt = gerar_resposta_com_contexto(pergunta, contexto)
+    
+    return prompt
 #endregion
