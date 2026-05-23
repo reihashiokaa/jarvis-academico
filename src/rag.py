@@ -716,105 +716,98 @@ def carregar_documentos():
 # Função: dividir_texto_em_chunks
 # ------------------------------------------------------------
 # Esta função recebe um texto em formato de string e retorna
-# uma lista de chunks de tamanho fixo desse texto, isto é,
-# uma lista com pedaços menores do texto.
+# uma lista de chunks, isto é, uma lista com pedaços menores do
+# texto.
 #
 # O tamanho do pedaço do chunk e da sobreposição são passados por
 # parâmetro, onde:
 #  
 #  - tamanho_chunk recebe um valor inteiro que define o tamanho
-#  desses pedaços menores de texto, contando os caracteres da
-#  da string.
+#  desses pedaços menores de texto, contando a quantidade de
+#  palavras.
 #
-#  - sobreposicao recebe um valor inteiro que define quantos caracteres
-#  se repetem entre um chunk e o próximo.
-#
-# Exemplo:
-#
-# texto = "Regressão logística é um algoritmo estatístico e de
-# aprendizado de máquina"
-#
-# tamanho_chunk = 10 e sobreposicao = 5
-#
-# ['Regressão ', 'ssão logística ', 'tica é um algor',
-# 'algoritmo estat', 'estatístico e d', 'o e de aprendiz',
-# 'endizado de máq', 'e máquina']
+#  - sobreposicao recebe um valor inteiro que define quantos
+#  palavras se repetem entre um chunk e o próximo.
 #
 # Se o texto for uma string vazia, será retornado uma lista vazia.
 # ------------------------------------------------------------
-def dividir_texto_em_chunks(texto, tamanho_chunk=800, sobreposicao=100):
-    # --------------------------------------------------------
-    # Aqui inicializamos as variáveis que serão utilizadas para
-    # realizar a divisão dos chunks, no qual:
-    # 
-    #  - chunk_inicio: define o índice da string em que um chunk inicia.
-    #  - chunk_fim: define o índice da string que o chunk termina.
-    # --------------------------------------------------------
-    chunk_inicio = 0
-    chunk_fim = 0
+def dividir_texto_em_chunks(texto, tamanho_chunk=500, sobreposicao=100):
+    # ------------------------------------------------------------
+    # O método split divide uma string em uma lista no qual cada
+    # palavra é um item da lista.
+    #
+    # Inicializa um vetor vazio para guardar os chunks que foram
+    # extraídos.
+    # ------------------------------------------------------------
+    palavras = texto.split()
+    chunks = []
     
-    # --------------------------------------------------------
-    # Inicializa uma lista vazia para adicionarmos os chunks
-    # extraídos do texto.
-    # --------------------------------------------------------
-    lista_chunks = []
+    # ------------------------------------------------------------
+    # Também é inicializado uma variável que será responsável por
+    # armazenar e atualizar um valor que indicará onde um chunk
+    # começa.
+    # ------------------------------------------------------------
+    inicio = 0
     
-    # --------------------------------------------------------
-    # Para extrair os chunks, iteramos sobre os caracteres do
-    # texto, com passos de tamanho igual ao tamanho_chunk.
-    # --------------------------------------------------------
-    while chunk_fim < len(texto):
-        # --------------------------------------------------------
-        # Verificamos se o índice final do chunk somado ao tamanho
-        # do próximo chunk (passo) não ultrapassa o tamanho do texto.
-        #
-        # Se ultrapassar, o índice final do próximo chunk é equivalente
-        # ao índice final do texto.
-        # --------------------------------------------------------
-        if chunk_fim + tamanho_chunk > len(texto):
-            chunk_fim = len(texto)
-            
-        # --------------------------------------------------------
-        # Caso contrário, o índice final do próximo chunk é igual
-        # ao índice final do chunk atual somado ao tamanho do chunk.
-        # --------------------------------------------------------
-        else:
-            chunk_fim += tamanho_chunk
+    # ------------------------------------------------------------
+    # Aqui iteramos na lista das palavras até que tenhamos percorrido
+    # ela por inteiro.
+    #
+    # A variável inicio que foi definida anteriormente servirá como
+    # índice para esse laço.
+    # ------------------------------------------------------------
+    while inicio < len(palavras):
+        # ------------------------------------------------------------
+        # O índice final de um chunk é dado pelo seu índice inicial somado
+        # do tamanho do chunk.
+        # 
+        # Por exemplo, se o tamanho foi definido como 10, ou seja, um
+        # chunk tem 10 palavras, e esse determinado chunk inicia-se na
+        # palavra de posição 0, então o chunk será composto pelas palavras
+        # da posição 0 até a de posição 10.
+        # ------------------------------------------------------------
+        fim = inicio + tamanho_chunk
         
-        # --------------------------------------------------------
-        # Aqui 'recortamos' o chunk do texto por meio do fatiamento,
-        # no qual:
+        # ------------------------------------------------------------
+        # Para separar as palavras em chunks, executamos os seguintes
+        # comandos:
         #
-        #  - lista_chunks.append adiciona o chunk extraído na lista.
+        #  - palavras[inicio:fim] é o fatiamento do python, onde pegamos
+        #  um pedaço da lista, demarcado pelo índice inicial (a partir
+        #  de qual posição recortamos) e pelo índice final (até qual 
+        #  posição vai o recorte). Por exemplo, se tenho uma lista 
+        #  com 5 elementos e recorto da posição 0 a 3, então o pedaço
+        #  retornado será uma lista com os elementos dos índices 0, 1 
+        #  e 2.
         #
-        #  - texto[:] fatia um pedaço específico da string, em que
-        #  o número a esquerda do ':' sinaliza a partir de qual índice
-        #  será realizado o recorte e o valor a direita até qual
-        #  índice esse recorte vai.
+        #  - " ".join(chunk) transforma uma lista de palavras em uma única
+        #  string, no qual " " é o separador que será colocado entre cada
+        #  elemento da lista na string e .join(chunk) pega todos os 
+        #  elementos da lista e junta eles com o separador. Essa parte
+        #  é importante, pois é ele que junta a lista de palavras e
+        #  transforma em uma única string, assim criando um chunk que
+        #  realmente seja um trecho do texto e não uma lista de palavras.
         #
-        #  - max(0, chunk_inicio - sobreposicao) pega o maior valor
-        #  entre 0 e o índice incial do chunk menos a quantidade
-        #  de sobreposição, por exemplo, se o índice inicial é 0 e
-        #  a sobreposição é 100, então ficaria max(0, -100), assim
-        #  retornando 0, já que 0 é maior que um valor negativo.
-        #  Foi realizado este tratamento por causa que o fatiamento
-        #  do python aceita valores negativos sem lançar um erro de
-        #  list index out of range, em seu lugar ele inverte a direção
-        #  de leitura, lendo da direita para a esquerda.
-        # --------------------------------------------------------
-        lista_chunks.append(texto[max(0, chunk_inicio - sobreposicao):chunk_fim])
+        #  - chunks.append adiciona o chunk extraído a lista de chunks.
+        # ------------------------------------------------------------
+        chunk = palavras[inicio:fim]
+        chunks.append(" ".join(chunk))
         
-        # --------------------------------------------------------
-        # Aqui avançamos o valor do chunk_inicial somando com o valor
-        # de tamanho_chunk, que basicamente é o tamanho do passo
-        # que damos ao andar sobre o texto.
-        # --------------------------------------------------------
-        chunk_inicio += tamanho_chunk
+        # ------------------------------------------------------------
+        # Após extrair um chunk, atualizamos o valor da variável inicio.
+        # 
+        # A atualização é feita a partida da soma do valor de inicio com
+        # o valor do tamanho do chunk, subtraindo o valor de sobreposição,
+        # ou seja, a atualização é calculada para que o próximo chunk
+        # inicie incluindo algumas palavras repetidas do chunk anterior,
+        # para evitar que uma definição não seja quebrada ao meio.
+        # ------------------------------------------------------------
+        inicio += tamanho_chunk - sobreposicao
     
-    # --------------------------------------------------------
-    # Por fim retornamos a lista com os chunks do texto separados.
-    # --------------------------------------------------------
-    return lista_chunks
+    # ------------------------------------------------------------
+    # Retornamos a lista de chunks.
+    # ------------------------------------------------------------
+    return chunks
 #endregion
 
 #region carregar_chunks_documentos (intermediária, retorna uma lista com os chunks de todos os documentos)
@@ -951,21 +944,89 @@ def carregar_modelo_embeddings():
 # 
 # - id do chunk (id_chunk)
 # - Texto do chunk (texto_chunk)
+#
+# Se passar uma lista vazia de chunks, então a função retorna
+# uma lista vazia de embeddings e indica que não foi possível
+# gerar os embeddings.
 # ------------------------------------------------------------
 def gerar_embeddings_chunks(chunks):
+    # ------------------------------------------------------------
+    # Verifica se não foi passada uma lista vazia de chunks.
+    # ------------------------------------------------------------
     if not chunks:
+        # ------------------------------------------------------------
+        # Se entrar, isso significa que foi passada uma lista vazia e
+        # imprime que não foi possível gerar os embeddings, retornando
+        # assim um vetor vazio para embeddings.
+        # ------------------------------------------------------------
         print("Não foi possível gerar embeddings.")
         return chunks, []
     
+    # ------------------------------------------------------------
+    # Chama a função carregar_modelo_embeddings para carregar o
+    # modelo.
+    # ------------------------------------------------------------
     modelo = carregar_modelo_embeddings()
     
+    # ------------------------------------------------------------
+    # Aqui extraímos o texto de cada chunk e armazenamos tudo em uma
+    # nova lista.
+    #
+    # Basicamente está falando para guardar os dados associados a
+    # chave "texto_chunk" para cada dicionário (chunk) da lista de
+    # de chunks (lista de dicionários).
+    #
+    # O dicionário segue o seguinte formato:
+    #
+    # {
+    #   "id": id,
+    #   "arquivo_origem": "nome_arquivo",
+    #   "texto_chunk": "texto"
+    # }
+    #
+    # ------------------------------------------------------------
     lista_textos = [chunk["texto_chunk"] for chunk in chunks]
 
+    # ------------------------------------------------------------
+    # A partir do modelo carregado, transformamos a lista de chunks
+    # (textos) em vetores numéricos para auxiliar o computador a
+    # entender o significado semântico das palavras.
+    #
+    # O método encode() recebe uma lista de textos e converte cada
+    # texto em um vetor numérico, gerando então um vetor para cada
+    # chunk. No final será retornado uma lista/matriz de embeddings.
+    #
+    # O parâmetro 'convert_to_numpy=True' define que o resultado
+    # seja um numpy array em vez de uma lista comum do python.
+    # Foi aplicado esse parâmetro para facilitar cálculos matemáticos
+    # rápidos e processamento de dados posteriormente.
+    #
+    # Já o parâmetro 'normalize_embedding=True' normaliza cada vetor
+    # do resultado para a norma = 1. Este parâmetro é aplicado para
+    # padronizar os dados e permitir que o cálculo de similaridade
+    # de cosseno seja feito de forma muito mais rápida, além de eliminar
+    # o efeito do tamanho do texto, fazendo com que um texto longo
+    # e um texto curto de mesmo significado tenham vetores de
+    # mesmo tamanho.
+    # ------------------------------------------------------------
     embeddings = modelo.encode(lista_textos, convert_to_numpy=True, normalize_embeddings=True)
 
+    # ------------------------------------------------------------
+    # Aqui verificamos se a quantidade de embeddings é igual à quantidade
+    # de chunks.
+    # ------------------------------------------------------------
     if len(embeddings) != len(chunks):
+        # ------------------------------------------------------------
+        # Se não for, isso significa que houve um problema na geração
+        # e então é lançado um erro indicando essa diferença.
+        # ------------------------------------------------------------
         raise ValueError("Quantidade de embeddings diferente da quantidade de chunks.")
 
+    # ------------------------------------------------------------
+    # Por fim é retornado o vetor de chunks, que contém apenas os
+    # textos dos chunks, sem os dados adicionais, e a lista de
+    # embeddings.
+    # ------------------------------------------------------------
     return chunks, embeddings
 #endregion
 
@@ -974,7 +1035,7 @@ def gerar_embeddings_chunks(chunks):
 # ------------------------------------------------------------
 # Função: gerar_embedding_pergunta
 # ------------------------------------------------------------
-# Esta função recebe uma pergunta em formato string e a transforma
+# Esta função recebe uma pergunta em formato de string e a transforma
 # em um vetor.
 # ------------------------------------------------------------
 def gerar_embedding_pergunta(pergunta: str):
@@ -991,30 +1052,63 @@ def gerar_embedding_pergunta(pergunta: str):
     if pergunta:
         # ------------------------------------------------------------
         # Se a string não for vazia transforma a pergunta em um vetor
-        # a partir do modelo.
+        # a partir do modelo, convertendo o resultado para numpy array
+        # e normalizando o vetor para a norma = 1.
         # ------------------------------------------------------------
         embedding_pergunta = modelo.encode(pergunta, convert_to_numpy=True, normalize_embeddings=True)
         return embedding_pergunta
         
     else:
+        # ------------------------------------------------------------
+        # Caso contrário, for uma string vazia, será imprimido uma mensagem
+        # pedindo para informar uma pergunta válida e então retorna
+        # uma lista vazia.
+        # ------------------------------------------------------------
         print("Informe uma pergunta válida")
         return [] 
 #endregion
 
-#region calcular_similaridade_cosseno (intermediária, )
+#region calcular_similaridade_cosseno (intermediária, retorna a similaridade entre dois vetores)
 
 # ------------------------------------------------------------
 # Função: calcular_similaridade_cosseno
 # ------------------------------------------------------------
-# 
+# Esta função recebe dois vetores numéricos e retorna o quanto
+# eles são parecidos.
+#
+# Utiliza a métrica de Similaridade de Cosseno para calcular
+# esse grau de semelhança.
 # ------------------------------------------------------------
 def calcular_similaridade_cosseno(vetor_a: list, vetor_b: list):
+    # ------------------------------------------------------------
+    # Nesta parte transformamos os vetores que foram passados por
+    # parâmetro em matrizes com 1 linha. Isto é necessário por causa
+    # que a função cosine_similiarity foi desenhada para comparar
+    # listas de vários vetores ao mesmo tempo, exigindo assim o formato
+    # de matriz.
+    # ------------------------------------------------------------
     vetor_a = [vetor_a]
     vetor_b = [vetor_b]
 
+    # ------------------------------------------------------------
+    # A função cosine_similarity do sklearn é utilizada para calcular
+    # a similaridade do cosseno entre dois vetores.
+    #
+    # Ela mede a proximidade das direções de dois vetores em um
+    # espaço multidimensional, no qual resultados próximos a 1
+    # significam que os textos tem exatamente o mesmo sentido e
+    # próximos a 0 significam que os textos não têm nenhuma relação
+    # de assunto.
+    #
+    # O resultado retornado será uma matriz bidirecional do NumPy.
+    # ------------------------------------------------------------
     similaridade = cosine_similarity(vetor_a, vetor_b)
 
-    return similaridade[0]
+    # ------------------------------------------------------------
+    # Por fim, extraímos o valor da matriz, já que o resultado segue
+    # o formato [[resultado]], e então retornamos esse valor.
+    # ------------------------------------------------------------
+    return similaridade[0][0]
 #endregion
 
 #region recuperar_chunks_relevantes (intermediária, )
@@ -1024,37 +1118,18 @@ def calcular_similaridade_cosseno(vetor_a: list, vetor_b: list):
 # ------------------------------------------------------------
 # 
 # ------------------------------------------------------------
-def recuperar_chunks_relevantes(pergunta, quantidade=3):
-    # ------------------------------------------------------------
-    # 1. Carregar chunks
-    # ------------------------------------------------------------
+def recuperar_chunks_relevantes(pergunta, quantidade=5):
     chunks = carregar_chunks_documentos()
 
-    # ------------------------------------------------------------
-    # 2. Gerar embeddings dos chunks
-    # ------------------------------------------------------------
     chunks, embeddings_chunks = gerar_embeddings_chunks(chunks)
 
-    # ------------------------------------------------------------
-    # 3. Gerar embedding da pergunta
-    # ------------------------------------------------------------
     embedding_pergunta = gerar_embedding_pergunta(pergunta)
 
-    # ------------------------------------------------------------
-    # 4. Calcular similaridade (um por um)
-    # ------------------------------------------------------------
-    if not embeddings_chunks or not embedding_pergunta:
-        print("Não é possível calcular similaridades.")
-        return []
-    
     similaridades = [
         calcular_similaridade_cosseno(embedding_pergunta, emb)
         for emb in embeddings_chunks
     ]
 
-    # ------------------------------------------------------------
-    # 5. Montar resultados
-    # ------------------------------------------------------------
     resultados = []
 
     for i, chunk in enumerate(chunks):
@@ -1065,18 +1140,12 @@ def recuperar_chunks_relevantes(pergunta, quantidade=3):
             "similaridade": float(similaridades[i])
         })
 
-    # ------------------------------------------------------------
-    # 6. Ordenar por relevância
-    # ------------------------------------------------------------
     resultados_ordenados = sorted(
         resultados,
         key=lambda x: x["similaridade"],
         reverse=True
     )
 
-    # ------------------------------------------------------------
-    # 7. Retornar top-k
-    # ------------------------------------------------------------
     return resultados_ordenados[:quantidade]
 #endregion
 
@@ -1094,7 +1163,7 @@ def formatar_chunks_recuperados(chunks):
         arquivo = chunk.get("nome_arquivo")
         texto_chunk = chunk.get("texto")
         
-        texto_formatado += f"Trecho {trecho_num}\nFonte: {arquivo}\nTexto: {texto_chunk}"
+        texto_formatado += f"Trecho {trecho_num + 1}\nFonte: {arquivo}\nTexto: {texto_chunk}"
         
         if trecho_num != len(chunks) - 1:
             texto_formatado += "\n\n"
@@ -1115,12 +1184,36 @@ def gerar_resposta_com_contexto(pergunta: str, contexto: str):
     return prompt
 #endregion
 
-#region consultar_material_rag (final, )
+#region consultar_material_rag (FINAL, )
 
 # ------------------------------------------------------------
 # Função: consultar_material_rag
 # ------------------------------------------------------------
-# 
+# Esta função executa o processo completo de recuperação de
+# materiais.
+#
+# Ela chama as seguintes funções intermediárias:
+#
+#  - recuperar_chunks_relevantes: recebe a pergunta do usuário
+#  e recupera os 5 chunks (trechos) mais relevantes entre todos os
+#  materiais disponíveis. Retorna uma lista de dicionários com os 
+#  dados 'id_chunk', 'nome_arquivo', 'texto' e 'similaridade', 
+#  ordenado a partir da similaridade.
+#
+#  - formatar_chunks_recuperados: recebe a lista de dicionários
+#  com os 5 chunks (trechos) mais relevantes e então formata
+#  esses trechos em uma única string indicando um índice para o
+#  trecho (Trecho 1, Trecho 2, Trecho 3, etc), o arquivo de
+#  origem (Fonte) e então o texto.
+#
+#  - gerar_resposta_com_contexto: recebe a pergunta do usuário
+#  e o contexto gerado pela função formatar_chunks_recuperados
+#  para criar um prompt que indica para a llm a pergunta do
+#  usuário, quais os trechos que ela precisa se basear para
+#  responder a pergunta e também que ela deverá responder utilizando
+#  apenas ou principalmente os trechos fornecidos e que caso
+#  o material seja insuficiente, indicar que não há informação
+#  suficiente.
 # ------------------------------------------------------------
 def consultar_material_rag(pergunta: str) -> str:
     chunks = recuperar_chunks_relevantes(pergunta)
