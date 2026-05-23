@@ -109,6 +109,30 @@ from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
 #endregion
 
+# ------------------------------------------------------------
+# Importamos a função chamar_llm.
+#
+# Essa função está no arquivo llm_client.py e é responsável por
+# enviar uma mensagem para o Gemma e devolver a resposta textual
+# gerada pelo modelo.
+#
+# No RAG, ela será usada depois que os trechos relevantes forem
+# recuperados.
+#
+# O fluxo será:
+#
+# pergunta do usuário
+#     ↓
+# chunks relevantes recuperados
+#     ↓
+# contexto formatado
+#     ↓
+# prompt enviado ao Gemma por chamar_llm(...)
+#     ↓
+# resposta final baseada nos materiais
+# ------------------------------------------------------------
+from src.llm_client import chamar_llm
+
 #region caminho da pasta com materiais de consulta
 # ------------------------------------------------------------
 # Aqui definimos o caminho até a pasta de materiais.
@@ -1171,54 +1195,138 @@ def formatar_chunks_recuperados(chunks):
     return texto_formatado
 #endregion
 
-#region gerar_resposta_com_contexto (intermediária, )
+#region gerar_resposta_com_contexto (intermediária, envia pergunta e contexto para a LLM e retorna a resposta)
 
 # ------------------------------------------------------------
 # Função: gerar_resposta_com_contexto
 # ------------------------------------------------------------
-# 
+# Esta função recebe a pergunta do usuário e o contexto recuperado
+# dos materiais.
+#
+# Esta é uma função intermediária.
+#
+# Isso significa que ela ajuda o sistema por dentro, mas não será
+# chamada diretamente pelo usuário final.
+#
+# Por que precisamos desta função?
+#
+# Porque o RAG não deve simplesmente mandar a pergunta solta para
+# a LLM.
+#
+# Ele deve mandar:
+#
+# 1. a pergunta do usuário;
+# 2. os trechos relevantes recuperados dos documentos;
+# 3. uma instrução dizendo para responder com base nesses trechos.
+#
+# Assim, a resposta final fica orientada pelos materiais de estudo,
+# e não apenas pelo conhecimento geral do modelo.
 # ------------------------------------------------------------
-def gerar_resposta_com_contexto(pergunta: str, contexto: str):
-    prompt = f"{pergunta}\n\n" + "Responda usando apenas ou principalmente os trechos fornecidos.\n\n" + contexto + "\n\nSe os trechos não forem suficientes, diga que o material não contém informação suficiente."
-        
-    return prompt
+def gerar_resposta_com_contexto(pergunta: str, contexto: str) -> str:
+    # --------------------------------------------------------
+    # Primeiro, verificamos se existe contexto.
+    #
+    # Se contexto estiver vazio, significa que nenhum trecho relevante
+    # foi recuperado dos materiais.
+    #
+    # Nesse caso, não vale a pena chamar a LLM, porque ela não teria
+    # material de apoio para responder.
+    # --------------------------------------------------------
+    if not contexto:
+        return (
+            "Não encontrei trechos relevantes nos materiais para responder essa pergunta."
+        )
+
+    # --------------------------------------------------------
+    # Agora montamos o prompt que será enviado para a LLM.
+    #
+    # Esse prompt contém:
+    #
+    # - uma instrução de comportamento;
+    # - os trechos recuperados dos materiais;
+    # - a pergunta original do usuário.
+    #
+    # Também deixamos claro que, se os trechos não forem suficientes,
+    # a LLM deve dizer isso em vez de inventar uma resposta.
+    # --------------------------------------------------------
+    prompt = f"""
+Você é o JARVIS Acadêmico, um assistente de estudos.
+
+Responda à pergunta do usuário usando apenas ou principalmente os trechos fornecidos abaixo.
+
+Se os trechos não forem suficientes para responder com segurança, diga que os materiais não contêm informação suficiente.
+
+Trechos recuperados dos materiais:
+
+{contexto}
+
+Pergunta do usuário:
+
+{pergunta}
+"""
+
+    # --------------------------------------------------------
+    # Agora enviamos o prompt para o Gemma.
+    #
+    # A função chamar_llm(...) já cuida da chamada ao modelo e
+    # também já tem tratamento para timeout, conexão e erros da API.
+    # --------------------------------------------------------
+    resposta = chamar_llm(prompt)
+
+    # --------------------------------------------------------
+    # Por fim, devolvemos a resposta gerada pela LLM.
+    # --------------------------------------------------------
+    return resposta
+
 #endregion
 
-#region consultar_material_rag (FINAL, )
+#region consultar_material_rag (FINAL, será uma ferramenta)
 
 # ------------------------------------------------------------
 # Função: consultar_material_rag
 # ------------------------------------------------------------
-# Esta função executa o processo completo de recuperação de
-# materiais.
+# Esta função executa o processo completo do RAG.
 #
-# Ela chama as seguintes funções intermediárias:
+# Esta é uma função FINAL.
 #
-#  - recuperar_chunks_relevantes: recebe a pergunta do usuário
-#  e recupera os 5 chunks (trechos) mais relevantes entre todos os
-#  materiais disponíveis. Retorna uma lista de dicionários com os 
-#  dados 'id_chunk', 'nome_arquivo', 'texto' e 'similaridade', 
-#  ordenado a partir da similaridade.
+# Isso significa que ela será cadastrada depois no tools.py como
+# uma ferramenta disponível para a LLM.
 #
-#  - formatar_chunks_recuperados: recebe a lista de dicionários
-#  com os 5 chunks (trechos) mais relevantes e então formata
-#  esses trechos em uma única string indicando um índice para o
-#  trecho (Trecho 1, Trecho 2, Trecho 3, etc), o arquivo de
-#  origem (Fonte) e então o texto.
+# Ela faz o fluxo completo:
 #
-#  - gerar_resposta_com_contexto: recebe a pergunta do usuário
-#  e o contexto gerado pela função formatar_chunks_recuperados
-#  para criar um prompt que indica para a llm a pergunta do
-#  usuário, quais os trechos que ela precisa se basear para
-#  responder a pergunta e também que ela deverá responder utilizando
-#  apenas ou principalmente os trechos fornecidos e que caso
-#  o material seja insuficiente, indicar que não há informação
-#  suficiente.
+# 1. recebe a pergunta do usuário;
+# 2. recupera os chunks mais relevantes;
+# 3. formata esses chunks como contexto;
+# 4. envia pergunta + contexto para o Gemma;
+# 5. recebe a resposta gerada;
+# 6. devolve a resposta final para o usuário.
 # ------------------------------------------------------------
 def consultar_material_rag(pergunta: str) -> str:
-    chunks = recuperar_chunks_relevantes(pergunta)
-    contexto = formatar_chunks_recuperados(chunks)
-    prompt = gerar_resposta_com_contexto(pergunta, contexto)
-    
-    return prompt
+    # --------------------------------------------------------
+    # Primeiro, recuperamos os chunks mais relevantes para a
+    # pergunta do usuário.
+    # --------------------------------------------------------
+    chunks_relevantes = recuperar_chunks_relevantes(pergunta)
+
+    # --------------------------------------------------------
+    # Agora formatamos os chunks recuperados em um texto único.
+    #
+    # Esse texto será usado como contexto para a LLM.
+    # --------------------------------------------------------
+    contexto = formatar_chunks_recuperados(chunks_relevantes)
+
+    # --------------------------------------------------------
+    # Agora enviamos a pergunta e o contexto para a LLM gerar a
+    # resposta final baseada nos materiais.
+    # --------------------------------------------------------
+    resposta = gerar_resposta_com_contexto(pergunta, contexto)
+
+    # --------------------------------------------------------
+    # Por fim, devolvemos a resposta final.
+    #
+    # Essa resposta será retornada para o tools.py e, depois, para
+    # o main.py mostrar no chat.
+    # --------------------------------------------------------
+    return resposta
+
 #endregion

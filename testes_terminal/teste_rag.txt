@@ -1,19 +1,773 @@
-python -c "from src.rag import carregar_texto_pdf; print(carregar_texto_pdf('.\data\materiais\TADS - Revisão Padrões de Design.pdf'))"
+COMANDOS PARA TESTAR AS FUNÇÕES DE RAG DO PROJETO JARVIS ACADÊMICO
+
+Observação:
+Rode os comandos no terminal do VS Code, dentro da pasta principal do projeto:
+
+jarvis-academico
+
+Se possível, ative antes o ambiente virtual.
+
+No CMD:
+
+.venv\Scripts\activate
+
+No PowerShell:
+
+.\.venv\Scripts\Activate.ps1
+
+
+============================================================
+OBSERVAÇÕES IMPORTANTES SOBRE OS TESTES DO RAG
+============================================================
+
+O RAG depende dos arquivos que estiverem dentro da pasta:
+
+data/materiais
+
+Antes de testar, confira se essa pasta existe e se tem pelo menos alguns arquivos .txt ou .pdf.
+
+Exemplos de arquivos aceitos:
+
+- .txt
+- .pdf
+
+A primeira vez que as funções de embeddings forem executadas, pode demorar bastante, porque o modelo de embeddings precisa ser carregado.
+
+O modelo usado no projeto é:
+
+sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2
+
+Se o modelo ainda não estiver baixado localmente, a primeira execução pode tentar baixar o modelo da internet.
+
+Se a API do Gemma estiver lenta, os testes finais do RAG também podem demorar ou retornar mensagem de timeout, porque a função final envia o contexto para a LLM responder.
+
+
+============================================================
+1. TESTAR SE A PASTA data/materiais EXISTE
+============================================================
+
+Esse teste verifica se a pasta de materiais está no lugar esperado.
+
+Comando:
+
+python -c "from src.rag import CAMINHO_MATERIAIS; print(CAMINHO_MATERIAIS); print(CAMINHO_MATERIAIS.exists())"
+
+Resultado esperado:
+
+O primeiro print deve mostrar o caminho da pasta data/materiais.
+
+O segundo print deve mostrar:
+
+True
+
+Se aparecer False, significa que a pasta data/materiais não existe ou está em local diferente do esperado.
+
+
+============================================================
+2. TESTAR A FUNÇÃO carregar_caminhos_documentos()
+============================================================
+
+Essa função lê a pasta data/materiais e retorna uma lista com os caminhos dos arquivos encontrados.
+
+Ela é uma função intermediária.
+
+Isso significa que ela ajuda o sistema por dentro, mas não será chamada diretamente pelo usuário final.
+
+Comando:
+
+python -c "from src.rag import carregar_caminhos_documentos; print(carregar_caminhos_documentos())"
+
+Resultado esperado:
+
+Se houver documentos na pasta, deve aparecer uma lista de caminhos parecida com:
+
+[WindowsPath('.../data/materiais/arquivo1.pdf'), WindowsPath('.../data/materiais/arquivo2.txt')]
+
+Se a pasta estiver vazia, deve aparecer:
+
+[]
+
+O que esse teste verifica:
+
+- se o sistema consegue acessar a pasta data/materiais;
+- se os arquivos estão sendo encontrados;
+- se a função retorna uma lista.
+
+
+============================================================
+3. TESTAR A FUNÇÃO formatar_texto()
+============================================================
+
+Essa função recebe um texto bruto e remove quebras de linha e espaços duplicados.
+
+Ela é uma função intermediária.
+
+Comando:
+
+python -c "from src.rag import formatar_texto; texto = 'Embeddings\\n\\n são   representações\\t vetoriais.'; print(formatar_texto(texto))"
+
+Resultado esperado:
+
+Embeddings são representações vetoriais.
+
+O que esse teste verifica:
+
+- se quebras de linha são substituídas;
+- se espaços duplicados são reduzidos;
+- se o texto fica mais limpo para o RAG processar.
+
+
+============================================================
+4. TESTAR A FUNÇÃO carregar_texto_txt()
+============================================================
+
+Essa função lê o conteúdo textual de um arquivo .txt.
+
+Ela é uma função intermediária.
+
+Atenção:
+Antes de rodar este teste, garanta que exista pelo menos um arquivo .txt dentro de:
+
+data/materiais
+
+Comando:
+
+python -c "from src.rag import carregar_caminhos_documentos, carregar_texto_txt; arquivos = [a for a in carregar_caminhos_documentos() if a.name.lower().endswith('.txt')]; print(carregar_texto_txt(arquivos[0])[:1000] if arquivos else 'Nenhum arquivo .txt encontrado.')"
+
+Resultado esperado:
+
+Se houver arquivo .txt, deve aparecer o começo do texto extraído.
+
+Se não houver arquivo .txt, deve aparecer:
+
+Nenhum arquivo .txt encontrado.
+
+O que esse teste verifica:
+
+- se arquivos .txt podem ser abertos;
+- se o conteúdo textual é lido;
+- se o texto é formatado pela função formatar_texto().
+
+
+============================================================
+5. TESTAR A FUNÇÃO carregar_texto_pdf()
+============================================================
+
+Essa função extrai texto de um arquivo .pdf.
+
+Ela é uma função intermediária.
+
+Atenção:
+Antes de rodar este teste, garanta que exista pelo menos um arquivo .pdf dentro de:
+
+data/materiais
+
+Comando:
+
+python -c "from src.rag import carregar_caminhos_documentos, carregar_texto_pdf; arquivos = [a for a in carregar_caminhos_documentos() if a.name.lower().endswith('.pdf')]; print(carregar_texto_pdf(arquivos[0])[:1000] if arquivos else 'Nenhum arquivo .pdf encontrado.')"
+
+Resultado esperado:
+
+Se houver PDF com texto extraível, deve aparecer o começo do texto extraído.
+
+Se não houver PDF, deve aparecer:
+
+Nenhum arquivo .pdf encontrado.
+
+Se o PDF for imagem escaneada, pode aparecer pouco texto ou texto vazio.
+
+O que esse teste verifica:
+
+- se a biblioteca pypdf está funcionando;
+- se o PDF pode ser aberto;
+- se o texto das páginas pode ser extraído;
+- se o texto é formatado pela função formatar_texto().
+
+
+============================================================
+6. TESTAR A FUNÇÃO carregar_texto_documento()
+============================================================
+
+Essa função recebe um caminho de documento e decide como carregar o texto.
+
+Se for .txt, chama carregar_texto_txt().
+Se for .pdf, chama carregar_texto_pdf().
+Se for outro formato, retorna string vazia.
+
+Ela é uma função intermediária.
+
+Comando:
+
+python -c "from src.rag import carregar_caminhos_documentos, carregar_texto_documento; arquivos = carregar_caminhos_documentos(); print(carregar_texto_documento(arquivos[0])[:1000] if arquivos else 'Nenhum documento encontrado.')"
+
+Resultado esperado:
+
+Se houver documento, deve aparecer o começo do texto extraído.
+
+Se não houver documento, deve aparecer:
+
+Nenhum documento encontrado.
+
+O que esse teste verifica:
+
+- se a função consegue escolher automaticamente como carregar o arquivo;
+- se ela diferencia .txt e .pdf;
+- se o retorno é uma string.
+
+
+============================================================
+7. TESTAR A FUNÇÃO carregar_documentos()
+============================================================
+
+Essa função carrega todos os documentos da pasta data/materiais e retorna uma lista de dicionários.
+
+Cada dicionário deve ter:
+
+- nome;
+- conteudo.
+
+Ela é uma função intermediária.
+
+Comando simples:
 
 python -c "from src.rag import carregar_documentos; print(carregar_documentos())"
 
-python -c "from src.rag import dividir_texto_em_chunks; print(dividir_texto_em_chunks('Regressão logística é um algoritmo estatístico e de aprendizado de máquina', 10, 5))"
+Comando mais resumido, mostrando só nome e tamanho do texto:
 
-python -c "from src.rag import carregar_chunks_documentos; print(carregar_chunks_documentos())"
+python -c "from src.rag import carregar_documentos; documentos = carregar_documentos(); print([(doc['nome'], len(doc['conteudo'])) for doc in documentos])"
 
-python -c "from src.rag import gerar_embeddings_chunks, carregar_chunks_documentos; print(gerar_embeddings_chunks(carregar_chunks_documentos()))"
+Resultado esperado:
 
-python -c "from src.rag import gerar_embedding_pergunta; print(gerar_embedding_pergunta('O que é RAG?'))"
+Uma lista parecida com:
 
-python -c "from src.rag import recuperar_chunks_relevantes; print(recuperar_chunks_relevantes('O que são padrões de projeto?'))"
+[('arquivo1.pdf', 3500), ('arquivo2.txt', 1200)]
 
-python -c "from src.rag import carregar_modelo_embeddings, gerar_embeddings_chunks, calcular_similaridade_cosseno; modelo = carregar_modelo_embeddings(); chunks=[{'id_chunk':1,'texto_chunk':'Embeddings são vetores'},{'id_chunk':2,'texto_chunk':'RAG combina recuperação'}]; chunks, embeddings = gerar_embeddings_chunks(chunks); pergunta = modelo.encode('O que é RAG?'); sims = [calcular_similaridade_cosseno(pergunta, e) for e in embeddings]; print(sims)"
+O número representa a quantidade de caracteres extraídos do documento.
 
-python -c "from src.rag import recuperar_chunks_relevantes, formatar_chunks_recuperados; print(formatar_chunks_recuperados(recuperar_chunks_relevantes('O que são padrões de projeto?')))"
+O que esse teste verifica:
 
-python -c "from src.rag import consultar_material_rag; print(consultar_material_rag('O que são padrões de projeto?'))"
+- se todos os documentos são carregados;
+- se os documentos sem texto são ignorados;
+- se cada documento mantém o nome do arquivo e o conteúdo extraído.
+
+
+============================================================
+8. TESTAR A FUNÇÃO dividir_texto_em_chunks()
+============================================================
+
+Essa função divide um texto grande em pedaços menores chamados chunks.
+
+Ela é uma função intermediária.
+
+Comando:
+
+python -c "from src.rag import dividir_texto_em_chunks; texto = ' '.join(['palavra'] * 1200); chunks = dividir_texto_em_chunks(texto, tamanho_chunk=500, sobreposicao=100); print(len(chunks)); print(chunks[0][:200])"
+
+Resultado esperado:
+
+Deve aparecer a quantidade de chunks gerados e o começo do primeiro chunk.
+
+Como o texto tem 1200 palavras, tamanho_chunk=500 e sobreposicao=100, devem aparecer alguns chunks.
+
+O que esse teste verifica:
+
+- se a função divide o texto;
+- se o tamanho do chunk funciona;
+- se a sobreposição está sendo aplicada;
+- se o retorno é uma lista de strings.
+
+
+============================================================
+9. TESTAR A FUNÇÃO carregar_chunks_documentos()
+============================================================
+
+Essa função carrega todos os documentos e divide seus textos em chunks.
+
+Cada chunk deve guardar:
+
+- id;
+- arquivo_origem;
+- texto_chunk.
+
+Ela é uma função intermediária.
+
+Comando simples:
+
+python -c "from src.rag import carregar_chunks_documentos; chunks = carregar_chunks_documentos(); print(chunks[:3])"
+
+Comando mais resumido:
+
+python -c "from src.rag import carregar_chunks_documentos; chunks = carregar_chunks_documentos(); print('Quantidade de chunks:', len(chunks)); print(chunks[0] if chunks else 'Nenhum chunk gerado.')"
+
+Resultado esperado:
+
+Deve aparecer a quantidade de chunks gerados.
+
+O primeiro chunk deve ter formato parecido com:
+
+{
+  'id': 0,
+  'arquivo_origem': 'nome_do_arquivo.pdf',
+  'texto_chunk': 'texto do chunk...'
+}
+
+O que esse teste verifica:
+
+- se os documentos estão sendo divididos em chunks;
+- se cada chunk mantém rastreabilidade com o arquivo de origem;
+- se cada chunk tem um id.
+
+
+============================================================
+10. TESTAR A FUNÇÃO carregar_modelo_embeddings()
+============================================================
+
+Essa função carrega o modelo de embeddings usado para transformar textos em vetores.
+
+Ela é uma função intermediária.
+
+Atenção:
+Esse teste pode demorar na primeira execução.
+
+Comando:
+
+python -c "from src.rag import carregar_modelo_embeddings; modelo = carregar_modelo_embeddings(); print(modelo)"
+
+Resultado esperado:
+
+Deve aparecer uma representação do modelo carregado.
+
+O que esse teste verifica:
+
+- se a biblioteca sentence-transformers está instalada;
+- se o modelo pode ser carregado;
+- se o ambiente tem acesso ao modelo;
+- se o modelo está pronto para gerar embeddings.
+
+
+============================================================
+11. TESTAR A FUNÇÃO gerar_embeddings_chunks()
+============================================================
+
+Essa função recebe uma lista de chunks e gera um embedding para cada chunk.
+
+Ela é uma função intermediária.
+
+Comando com chunks pequenos de teste:
+
+python -c "from src.rag import gerar_embeddings_chunks; chunks = [{'id': 0, 'arquivo_origem': 'teste.txt', 'texto_chunk': 'Embeddings representam textos como vetores.'}, {'id': 1, 'arquivo_origem': 'teste.txt', 'texto_chunk': 'RAG combina recuperação de informação com geração de texto.'}]; chunks_retornados, embeddings = gerar_embeddings_chunks(chunks); print(len(chunks_retornados)); print(len(embeddings)); print(embeddings.shape if hasattr(embeddings, 'shape') else 'sem shape')"
+
+Resultado esperado:
+
+Deve aparecer:
+
+2
+2
+(2, algum_numero)
+
+O número de colunas depende do modelo de embeddings.
+
+O que esse teste verifica:
+
+- se a função gera um vetor para cada chunk;
+- se a quantidade de embeddings bate com a quantidade de chunks;
+- se o retorno está em formato adequado para cálculos.
+
+
+============================================================
+12. TESTAR A FUNÇÃO gerar_embedding_pergunta()
+============================================================
+
+Essa função transforma a pergunta do usuário em um vetor.
+
+Ela é uma função intermediária.
+
+Comando:
+
+python -c "from src.rag import gerar_embedding_pergunta; emb = gerar_embedding_pergunta('O que são embeddings?'); print(type(emb)); print(emb.shape if hasattr(emb, 'shape') else len(emb))"
+
+Resultado esperado:
+
+Deve aparecer o tipo do vetor e o tamanho dele.
+
+Exemplo:
+
+<class 'numpy.ndarray'>
+(384,)
+
+O tamanho pode variar dependendo do modelo usado.
+
+O que esse teste verifica:
+
+- se a pergunta é transformada em embedding;
+- se o vetor é retornado corretamente;
+- se o modelo está funcionando para uma única pergunta.
+
+
+============================================================
+13. TESTAR A FUNÇÃO calcular_similaridade_cosseno()
+============================================================
+
+Essa função calcula o quanto dois vetores são parecidos.
+
+Ela é uma função intermediária.
+
+Comando:
+
+python -c "from src.rag import calcular_similaridade_cosseno; print(calcular_similaridade_cosseno([1, 0, 0], [1, 0, 0])); print(calcular_similaridade_cosseno([1, 0, 0], [0, 1, 0]))"
+
+Resultado esperado:
+
+O primeiro resultado deve ser próximo de:
+
+1.0
+
+O segundo resultado deve ser próximo de:
+
+0.0
+
+O que esse teste verifica:
+
+- se a similaridade de cosseno está funcionando;
+- se vetores iguais têm similaridade alta;
+- se vetores diferentes têm similaridade baixa.
+
+
+============================================================
+14. TESTAR A FUNÇÃO recuperar_chunks_relevantes()
+============================================================
+
+Essa função recebe uma pergunta, compara a pergunta com os chunks dos documentos e retorna os chunks mais relevantes.
+
+Ela é uma função intermediária.
+
+Comando:
+
+python -c "from src.rag import recuperar_chunks_relevantes; chunks = recuperar_chunks_relevantes('Explique embeddings', quantidade=3); print(chunks)"
+
+Comando mais legível:
+
+python -c "from src.rag import recuperar_chunks_relevantes; chunks = recuperar_chunks_relevantes('Explique embeddings', quantidade=3); [print(f\"ID: {c['id_chunk']} | Fonte: {c['nome_arquivo']} | Similaridade: {c['similaridade']}\\nTexto: {c['texto'][:500]}\\n\") for c in chunks]"
+
+Resultado esperado:
+
+Deve aparecer uma lista com os chunks mais relevantes.
+
+Cada item deve conter:
+
+- id_chunk;
+- nome_arquivo;
+- texto;
+- similaridade.
+
+O que esse teste verifica:
+
+- se os documentos são carregados;
+- se os chunks são gerados;
+- se os embeddings dos chunks são gerados;
+- se o embedding da pergunta é gerado;
+- se a similaridade é calculada;
+- se os chunks são ordenados por relevância.
+
+
+============================================================
+15. TESTAR A FUNÇÃO formatar_chunks_recuperados()
+============================================================
+
+Essa função transforma a lista de chunks recuperados em um texto organizado para enviar como contexto à LLM.
+
+Ela é uma função intermediária.
+
+Comando:
+
+python -c "from src.rag import recuperar_chunks_relevantes, formatar_chunks_recuperados; chunks = recuperar_chunks_relevantes('Explique embeddings', quantidade=2); print(formatar_chunks_recuperados(chunks))"
+
+Resultado esperado:
+
+Deve aparecer um texto parecido com:
+
+Trecho 1
+Fonte: arquivo.pdf
+Texto: ...
+
+Trecho 2
+Fonte: arquivo.txt
+Texto: ...
+
+O que esse teste verifica:
+
+- se os chunks são formatados corretamente;
+- se a fonte do documento aparece;
+- se o texto dos chunks aparece;
+- se o contexto fica pronto para ser enviado à LLM.
+
+
+============================================================
+16. TESTAR A FUNÇÃO gerar_resposta_com_contexto()
+============================================================
+
+Essa função recebe a pergunta do usuário e o contexto recuperado dos materiais.
+
+Depois, monta um prompt e envia para o Gemma usando chamar_llm().
+
+Ela é uma função intermediária.
+
+Atenção:
+Esse teste depende da API/modelo Gemma.
+Se a API estiver lenta, pode demorar ou retornar mensagem de timeout.
+
+Comando:
+
+python -c "from src.rag import recuperar_chunks_relevantes, formatar_chunks_recuperados, gerar_resposta_com_contexto; chunks = recuperar_chunks_relevantes('Explique embeddings', quantidade=2); contexto = formatar_chunks_recuperados(chunks); print(gerar_resposta_com_contexto('Explique embeddings com base nos materiais', contexto))"
+
+Resultado esperado:
+
+Uma resposta textual do Gemma baseada nos trechos recuperados.
+
+Resultado aceitável se a API estiver instável:
+
+O modelo demorou demais para responder e a chamada atingiu o tempo limite. Tente novamente em alguns instantes.
+
+O que esse teste verifica:
+
+- se o contexto recuperado é enviado para a LLM;
+- se a LLM gera uma resposta final;
+- se o tratamento de timeout da função chamar_llm() funciona.
+
+
+============================================================
+17. TESTAR A FUNÇÃO consultar_material_rag()
+============================================================
+
+Essa função executa o fluxo completo do RAG.
+
+Ela é uma função FINAL.
+
+Isso significa que ela será cadastrada depois no tools.py como ferramenta disponível para a LLM.
+
+Ela faz:
+
+1. recebe a pergunta do usuário;
+2. recupera os chunks relevantes;
+3. formata os chunks como contexto;
+4. envia pergunta + contexto para o Gemma;
+5. recebe a resposta gerada;
+6. devolve a resposta final.
+
+Comando:
+
+python -c "from src.rag import consultar_material_rag; print(consultar_material_rag('Explique embeddings com base nos materiais'))"
+
+Resultado esperado:
+
+Uma resposta em linguagem natural, baseada nos materiais.
+
+Resultado aceitável se a API estiver instável:
+
+O modelo demorou demais para responder e a chamada atingiu o tempo limite. Tente novamente em alguns instantes.
+
+O que esse teste verifica:
+
+- se o RAG completo funciona isoladamente;
+- se a função final retorna uma resposta pronta;
+- se a função pode ser usada depois pelo tools.py.
+
+
+============================================================
+18. TESTAR consultar_material_rag() COM OUTRA PERGUNTA
+============================================================
+
+Esse teste verifica se o RAG funciona com outro tema.
+
+Comando:
+
+python -c "from src.rag import consultar_material_rag; print(consultar_material_rag('Resuma o conteúdo sobre regressão logística'))"
+
+Resultado esperado:
+
+Uma resposta em linguagem natural baseada nos materiais, se houver conteúdo sobre regressão logística.
+
+Se os materiais não tiverem esse conteúdo, o sistema deve indicar que não há informação suficiente.
+
+O que esse teste verifica:
+
+- se o RAG funciona para perguntas diferentes;
+- se o sistema recupera trechos relevantes para outro assunto;
+- se a resposta depende dos materiais.
+
+
+============================================================
+19. TESTAR consultar_material_rag() COM PERGUNTA POSSIVELMENTE FORA DOS MATERIAIS
+============================================================
+
+Esse teste verifica se o sistema evita inventar resposta quando os materiais não forem suficientes.
+
+Comando:
+
+python -c "from src.rag import consultar_material_rag; print(consultar_material_rag('Segundo os materiais, explique física quântica avançada'))"
+
+Resultado esperado:
+
+Se os materiais não tiverem informação suficiente, o ideal é que a resposta diga isso.
+
+Exemplo:
+
+Os materiais não contêm informação suficiente para responder com segurança.
+
+O que esse teste verifica:
+
+- se o prompt orienta a LLM a não inventar;
+- se o sistema responde com base nos trechos;
+- se o RAG não vira apenas resposta genérica da LLM.
+
+
+============================================================
+20. TESTE RÁPIDO DE SANIDADE DO RAG
+============================================================
+
+Se quiser testar rapidamente se o RAG está funcionando, rode estes comandos:
+
+1. Ver documentos encontrados:
+
+python -c "from src.rag import carregar_documentos; documentos = carregar_documentos(); print([(doc['nome'], len(doc['conteudo'])) for doc in documentos])"
+
+2. Ver chunks gerados:
+
+python -c "from src.rag import carregar_chunks_documentos; chunks = carregar_chunks_documentos(); print('Quantidade de chunks:', len(chunks)); print(chunks[0] if chunks else 'Nenhum chunk gerado.')"
+
+3. Ver chunks relevantes:
+
+python -c "from src.rag import recuperar_chunks_relevantes; chunks = recuperar_chunks_relevantes('Explique embeddings', quantidade=3); [print(f\"Fonte: {c['nome_arquivo']} | Similaridade: {c['similaridade']}\\n{c['texto'][:300]}\\n\") for c in chunks]"
+
+4. Testar função final:
+
+python -c "from src.rag import consultar_material_rag; print(consultar_material_rag('Explique embeddings com base nos materiais'))"
+
+
+============================================================
+PROBLEMAS COMUNS
+============================================================
+
+1. Erro dizendo que pypdf não existe:
+
+Instale as dependências:
+
+pip install pypdf
+
+ou:
+
+pip install -r requirements.txt
+
+
+2. Erro dizendo que sentence_transformers não existe:
+
+Instale:
+
+pip install sentence-transformers
+
+ou:
+
+pip install -r requirements.txt
+
+
+3. Erro dizendo que sklearn não existe:
+
+Instale:
+
+pip install scikit-learn
+
+ou:
+
+pip install -r requirements.txt
+
+
+4. O primeiro teste de embeddings demorou muito:
+
+Isso é normal na primeira execução, porque o modelo pode estar sendo carregado ou baixado.
+
+
+5. O RAG retornou mensagem de timeout:
+
+Isso significa que a chamada ao Gemma demorou demais.
+Não necessariamente é erro do RAG.
+A função chamar_llm() já trata esse caso e devolve uma mensagem amigável.
+
+
+6. O RAG retornou resposta ruim:
+
+Verifique primeiro os chunks recuperados:
+
+python -c "from src.rag import recuperar_chunks_relevantes; chunks = recuperar_chunks_relevantes('sua pergunta aqui', quantidade=3); [print(f\"Fonte: {c['nome_arquivo']} | Similaridade: {c['similaridade']}\\n{c['texto'][:500]}\\n\") for c in chunks]"
+
+Se os chunks recuperados forem ruins, o problema está na recuperação.
+
+Se os chunks recuperados forem bons, mas a resposta for ruim, o problema provavelmente está no prompt enviado ao Gemma.
+
+
+7. O RAG não encontrou documentos:
+
+Confira se a pasta existe:
+
+data/materiais
+
+E confira se há arquivos .txt ou .pdf dentro dela.
+
+
+============================================================
+CHECKLIST FINAL DO RAG
+============================================================
+
+[ ] A pasta data/materiais existe.
+
+[ ] Há documentos .txt ou .pdf na pasta.
+
+[ ] carregar_caminhos_documentos() encontra os arquivos.
+
+[ ] carregar_texto_txt() funciona para TXT.
+
+[ ] carregar_texto_pdf() funciona para PDF.
+
+[ ] carregar_documentos() retorna documentos com nome e conteúdo.
+
+[ ] dividir_texto_em_chunks() divide textos corretamente.
+
+[ ] carregar_chunks_documentos() gera chunks com id, arquivo_origem e texto_chunk.
+
+[ ] carregar_modelo_embeddings() carrega o modelo.
+
+[ ] gerar_embeddings_chunks() gera embeddings para os chunks.
+
+[ ] gerar_embedding_pergunta() gera embedding para a pergunta.
+
+[ ] calcular_similaridade_cosseno() calcula similaridade.
+
+[ ] recuperar_chunks_relevantes() retorna chunks relevantes.
+
+[ ] formatar_chunks_recuperados() monta o contexto.
+
+[ ] gerar_resposta_com_contexto() chama a LLM com pergunta + contexto.
+
+[ ] consultar_material_rag() devolve resposta final baseada nos materiais.
+
+[ ] Se a API demora, o sistema retorna mensagem amigável em vez de quebrar.
+
+
+============================================================
+PRÓXIMO PASSO DEPOIS DOS TESTES DO RAG
+============================================================
+
+Depois que consultar_material_rag() funcionar isoladamente, integrar o RAG ao tools.py.
+
+O fluxo será:
+
+1. importar consultar_material_rag no tools.py;
+
+2. adicionar consultar_material_rag em carregar_ferramentas_disponiveis();
+
+3. adicionar a descrição de consultar_material_rag em carregar_descricoes_ferramentas();
+
+4. testar executar_ferramenta() chamando consultar_material_rag;
+
+5. testar se a LLM escolhe consultar_material_rag quando o usuário perguntar sobre materiais;
+
+6. testar pelo chat principal com python -m src.main.
