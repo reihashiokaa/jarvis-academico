@@ -48,6 +48,16 @@ python-dotenv
 
 
 # ------------------------------------------------------------
+# Biblioteca usada para criar bots do Telegram.
+#
+# Ela facilita a comunicação entre um código python e a API do
+# Telegram, abstraindo as requisições HTTP, tratamentos de JSON,
+# conexões e lógicas de eventos.
+# ------------------------------------------------------------
+python-telegram-bot
+
+
+# ------------------------------------------------------------
 # Biblioteca usada para carregar modelos de embeddings.
 #
 # No projeto, ela permite transformar textos em vetores numéricos,
