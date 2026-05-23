@@ -3,38 +3,65 @@
 # ============================================================
 # Arquivo: rag.py
 # ------------------------------------------------------------
-# Este arquivo será responsável por lidar com o RAG (Retrieval-
-# Augmented Generation).
+# Este arquivo é responsável por lidar com o RAG do JARVIS
+# Acadêmico.
 #
-# A implementação do RAG, isto é, a consulta orientada a materiais
-# de estudo, é uma das funcionalidades obrigatórias do Trabalho 1.
+# RAG significa Retrieval-Augmented Generation, ou seja,
+# Geração Aumentada por Recuperação.
 #
-# Ela deve permitir que o usuário faça perguntas sobre materiais
-# (PDFs, textos, anotações), como por exemplo:
+# A ideia principal do RAG é permitir que o assistente responda
+# perguntas usando materiais de estudo carregados no projeto,
+# como PDFs, textos e anotações.
 #
-# - "Explique regressão logística"
+# Exemplos de perguntas que o usuário poderá fazer:
+#
+# - "Explique regressão logística com base nos materiais"
 # - "Resuma o conteúdo sobre embeddings"
-# - "Quais são os principais pontos do material X?"
+# - "Quais são os principais pontos do padrão Singleton?"
+# - "O que os materiais dizem sobre o padrão Adapter?"
 #
-# Neste arquivo, vamos criar funções para ler os dados da agenda -> A substituir
-# que estarão guardados no arquivo:
+# Os documentos usados pelo RAG ficam armazenados na pasta:
 #
-# data/agenda.json
+# data/materiais
 #
-# A lógica geral usada neste arquivo será:
+# A lógica geral deste arquivo é:
+#
+# 1. carregar os documentos da pasta data/materiais;
+# 2. extrair o texto desses documentos;
+# 3. dividir os textos em chunks, isto é, trechos menores;
+# 4. gerar embeddings para os chunks;
+# 5. gerar embedding para a pergunta do usuário;
+# 6. comparar a pergunta com os chunks usando similaridade;
+# 7. recuperar os trechos mais relevantes;
+# 8. montar um contexto com esses trechos;
+# 9. enviar pergunta + contexto para a LLM;
+# 10. devolver uma resposta final baseada nos materiais.
+#
+# A organização das funções segue o padrão usado no projeto:
 #
 # carregar_...
-#   -> abre o arquivo e carrega dados gerais.
+#   -> carrega dados gerais, arquivos, documentos ou modelos.
 #
 # recuperar_...
-#   -> recupera dados específicos, mas ainda em formato bruto.
+#   -> recupera informações específicas, ainda em formato bruto.
 #
 # formatar_...
-#   -> transforma dados brutos em texto mais bonito.
+#   -> transforma dados brutos em texto mais organizado.
+#
+# gerar_...
+#   -> gera embeddings, prompts ou respostas.
 #
 # consultar_...
-#   -> faz o processo completo e devolve resposta pronta.
+#   -> executa o processo completo e devolve uma resposta pronta.
+#
+# A função final deste arquivo é:
+#
+# consultar_material_rag(pergunta)
+#
+# Essa função será cadastrada no tools.py como ferramenta
+# disponível para tool calling.
 # ============================================================
+
 #endregion
 
 #region importações

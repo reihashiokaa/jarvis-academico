@@ -11,9 +11,10 @@
 
 
 # ------------------------------------------------------------
-# Biblioteca usada para auxiliar nos cálculos com vetores.
+# Biblioteca usada para auxiliar nos cálculos com vetores,
+# matrizes e embeddings.
 #
-# - Ainda a descrever
+# No projeto, ela apoia operações numéricas usadas no RAG.
 # ------------------------------------------------------------
 numpy
 
@@ -29,9 +30,10 @@ openai
 
 
 # ------------------------------------------------------------
-# Biblioteca para extrair texto arquivos PDF.
+# Biblioteca usada para extrair texto de arquivos PDF.
 #
-# - Ainda a descrever
+# No projeto, ela é usada no RAG para ler os materiais de estudo
+# em formato PDF.
 # ------------------------------------------------------------
 pypdf
 
@@ -46,9 +48,20 @@ python-dotenv
 
 
 # ------------------------------------------------------------
-# Biblioteca usada para treinar o modelo de embedding.
+# Biblioteca usada para carregar modelos de embeddings.
 #
-# Ele permite converter textos, imagens e áudio em vetores 
-# numéricos densos de tamanho fixo.
+# No projeto, ela permite transformar textos em vetores numéricos,
+# que depois são comparados para recuperar os trechos mais
+# relevantes dos materiais.
 # ------------------------------------------------------------
 sentence-transformers
+
+
+# ------------------------------------------------------------
+# Biblioteca usada para funções de aprendizado de máquina e
+# métricas matemáticas.
+#
+# No projeto, ela é usada para calcular a similaridade de cosseno
+# entre o embedding da pergunta e os embeddings dos chunks.
+# ------------------------------------------------------------
+scikit-learn

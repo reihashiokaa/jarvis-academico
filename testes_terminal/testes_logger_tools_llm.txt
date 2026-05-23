@@ -411,7 +411,7 @@ python -m src.main
 
 Mensagem para testar:
 
-Explique regressão logística com base nos materiais
+Explique o padrão Singleton com base nos materiais
 
 Resultado esperado:
 
@@ -421,7 +421,7 @@ Também é aceitável aparecer mensagem de timeout se a API do Gemma estiver len
 
 Depois testar:
 
-Quais são os principais pontos do material sobre regressão logística?
+Quais são os principais pontos do padrão Adapter?
 
 Resultado esperado:
 

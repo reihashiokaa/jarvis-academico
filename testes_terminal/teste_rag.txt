@@ -104,7 +104,7 @@ Ela é uma função intermediária.
 
 Comando:
 
-python -c "from src.rag import formatar_texto; texto = 'Embeddings\\n\\n são   representações\\t vetoriais.'; print(formatar_texto(texto))"
+python -c "from src.rag import formatar_texto; texto = 'Embeddings\n\n são   representações\t vetoriais.'; print(formatar_texto(texto))"
 
 Resultado esperado:
 
@@ -518,7 +518,7 @@ Se a API estiver lenta, pode demorar ou retornar mensagem de timeout.
 
 Comando:
 
-python -c "from src.rag import recuperar_chunks_relevantes, formatar_chunks_recuperados, gerar_resposta_com_contexto; chunks = recuperar_chunks_relevantes('Explique embeddings', quantidade=2); contexto = formatar_chunks_recuperados(chunks); print(gerar_resposta_com_contexto('Explique embeddings com base nos materiais', contexto))"
+python -c "from src.rag import recuperar_chunks_relevantes, formatar_chunks_recuperados, gerar_resposta_com_contexto; chunks = recuperar_chunks_relevantes('O que é o padrão Singleton?', quantidade=2); contexto = formatar_chunks_recuperados(chunks); print(gerar_resposta_com_contexto('Explique o padrão Singleton com base nos materiais', contexto))"
 
 Resultado esperado:
 
@@ -556,7 +556,7 @@ Ela faz:
 
 Comando:
 
-python -c "from src.rag import consultar_material_rag; print(consultar_material_rag('Explique embeddings com base nos materiais'))"
+python -c "from src.rag import consultar_material_rag; print(consultar_material_rag('Explique o padrão Decorator com base nos materiais'))"
 
 Resultado esperado:
 
