@@ -325,3 +325,104 @@ O retorno esperado é algo como:
 Comando:
 
 python -c "from src.llm_client import recuperar_decisao_tarefa_por_descricao; from src.tarefas import carregar_tarefas; tarefas = carregar_tarefas(); print(recuperar_decisao_tarefa_por_descricao('terminar o trabalho de ia', tarefas))"
+
+============================================================
+TESTAR SE A LLM ESCOLHE A FERRAMENTA consultar_material_rag()
+============================================================
+
+Esse teste verifica se a LLM consegue decidir que uma pergunta sobre materiais de estudo deve usar a ferramenta consultar_material_rag.
+
+A função decidir_chamada_ferramenta() ainda NÃO executa a ferramenta.
+
+Ela apenas pede ao Gemma para escolher qual ferramenta deve ser chamada.
+
+Comando:
+
+python -c "from src.llm_client import decidir_chamada_ferramenta; from src.tools import carregar_descricoes_ferramentas; descricoes = carregar_descricoes_ferramentas(); print(decidir_chamada_ferramenta('Explique regressão logística com base nos materiais', descricoes))"
+
+Resultado esperado:
+
+A LLM deve devolver um JSON parecido com:
+
+{
+  "usar_ferramenta": true,
+  "nome_ferramenta": "consultar_material_rag",
+  "entrada": {
+    "pergunta": "Explique regressão logística com base nos materiais"
+  }
+}
+
+O ponto principal é aparecer:
+
+"nome_ferramenta": "consultar_material_rag"
+
+============================================================
+TESTAR recuperar_decisao_ferramenta() COM consultar_material_rag
+============================================================
+
+Esse teste verifica se a LLM escolhe a ferramenta consultar_material_rag e se a decisão é interpretada corretamente como dicionário Python.
+
+A função recuperar_decisao_ferramenta() junta duas etapas:
+
+1. decidir_chamada_ferramenta()
+   Pede ao Gemma para escolher uma ferramenta.
+
+2. interpretar_decisao_ferramenta()
+   Converte a resposta textual em um dicionário Python seguro.
+
+Comando:
+
+python -c "from src.llm_client import recuperar_decisao_ferramenta; from src.tools import carregar_descricoes_ferramentas; descricoes = carregar_descricoes_ferramentas(); print(recuperar_decisao_ferramenta('Explique regressão logística com base nos materiais', descricoes))"
+
+Resultado esperado:
+
+{
+  'usar_ferramenta': True,
+  'nome_ferramenta': 'consultar_material_rag',
+  'entrada': {
+    'pergunta': 'Explique regressão logística com base nos materiais'
+  }
+}
+
+O ponto principal é aparecer:
+
+'nome_ferramenta': 'consultar_material_rag'
+
+============================================================
+TESTAR RAG PELO CHAT PRINCIPAL
+============================================================
+
+Esse teste verifica se o chat principal consegue usar o RAG por tool calling.
+
+O fluxo esperado é:
+
+1. usuário faz uma pergunta sobre os materiais;
+2. a LLM decide usar consultar_material_rag;
+3. o main.py chama executar_ferramenta();
+4. o tools.py executa consultar_material_rag();
+5. o RAG recupera chunks relevantes;
+6. o Gemma responde com base nos trechos;
+7. a resposta aparece no chat;
+8. a chamada é registrada em logs/tool_calls.jsonl.
+
+Comando para iniciar o chat:
+
+python -m src.main
+
+Mensagem para testar:
+
+Explique o padrão Singleton com base nos materiais
+
+Resultado esperado:
+
+O JARVIS deve responder com uma explicação baseada nos materiais carregados em data/materiais.
+
+Também é aceitável aparecer mensagem de timeout se a API do Gemma estiver lenta, desde que o programa não quebre com traceback.
+
+Depois testar:
+
+Quais são os principais pontos do padrão Adapter?
+
+Resultado esperado:
+
+O JARVIS deve usar consultar_material_rag novamente e responder com base nos documentos.
