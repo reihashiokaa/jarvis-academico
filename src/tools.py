@@ -111,6 +111,16 @@ from src.tarefas import (
 # ------------------------------------------------------------
 from src.logger import registrar_chamada_ferramenta
 
+
+# ------------------------------------------------------------
+# Importamos a função responsável por executar o processo
+# completo da consulta de materiais.
+#
+# Ela recebe uma pergunta e então executa todo o processo de
+# recuperação dos materiais e formatação da pergunta/respostas.
+# ------------------------------------------------------------
+from src.rag import consultar_material_rag
+
 #endregion
 
 #region carregar_ferramentas_disponiveis (intermediária, retorna dicionário com nomes e funções disponíveis)
@@ -214,7 +224,23 @@ def carregar_ferramentas_disponiveis() -> dict:
         # ----------------------------------------------------
         "consultar_tarefas": consultar_tarefas,
         "adicionar_tarefa": adicionar_tarefa,
-        "concluir_tarefa_por_descricao": concluir_tarefa_por_descricao
+        "concluir_tarefa_por_descricao": concluir_tarefa_por_descricao,
+
+        # ----------------------------------------------------
+        # Ferramenta relacionada à consulta de materiais de estudo
+        # (RAG).
+        #
+        # Essa função foi criada no arquivo rag.py.
+        # Ela representa as ações principais exigidas no
+        # Trabalho 1:
+        #
+        # - carregar documentos;
+        # - dividir em chunks;
+        # - gerar embeddings;
+        # - recuperar trechos relevantes;
+        # - gerar respostas baseadas nesses trechos
+        # ----------------------------------------------------
+        "consultar_material_rag": consultar_material_rag
     }
 
     # --------------------------------------------------------
@@ -707,6 +733,21 @@ def carregar_descricoes_ferramentas() -> list:
             "descricao": "Use quando o usuário quiser concluir, finalizar, marcar como feita ou dizer que terminou uma tarefa. A entrada deve ser uma descrição textual da tarefa mencionada pelo usuário.",
             "parametros": {
                 "descricao_tarefa": "Descrição textual da tarefa que o usuário quer concluir. Exemplo: terminar o trabalho de ia."
+            }
+        },
+
+        # ----------------------------------------------------
+        # Ferramenta: consultar_material_rag
+        #
+        # Essa ferramenta recebe uma pergunta do usuário e retorna
+        # um prompt formatado com a pergunta e os trechos recuperados
+        # dos materiais para ser enviado à llm.
+        # ----------------------------------------------------
+        {
+            "nome": "consultar_material_rag",
+            "descricao": "Use quando o usuário fazer perguntas sobre materiais (PDFs, textos, anotações).",
+            "parametros": {
+                "pergunta": "Descrição textual de uma pergunta relacionada a materiais de estudo. Exemplo: Explique regressão logística."
             }
         }
     ]
