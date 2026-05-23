@@ -740,12 +740,12 @@ def carregar_descricoes_ferramentas() -> list:
         # Ferramenta: consultar_material_rag
         #
         # Essa ferramenta recebe uma pergunta do usuário e retorna
-        # um prompt formatado com a pergunta e os trechos recuperados
-        # dos materiais para ser enviado à llm.
+        # uma resposta final baseada nos trechos recuperados dos
+        # materiais de estudo.
         # ----------------------------------------------------
         {
             "nome": "consultar_material_rag",
-            "descricao": "Use quando o usuário fazer perguntas sobre materiais (PDFs, textos, anotações).",
+            "descricao": "Use quando o usuário fizer perguntas sobre materiais de estudo, PDFs, textos, anotações ou conteúdos carregados no sistema.",
             "parametros": {
                 "pergunta": "Descrição textual de uma pergunta relacionada a materiais de estudo. Exemplo: Explique regressão logística."
             }
