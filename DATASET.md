@@ -36,14 +36,24 @@ Cada arquivo corresponde a um documento individual utilizado como fonte para a f
 - Limitações: conteúdo muito geral, pouca profundidade, possível desatualização
 
 ### Regressão Linear Simples
-- Origem: USP (IME)
+- Origem: Universidade de São Paulo (USP)
 - Tipo: Material didático
 - Limitações: exemplos simplificados, cobertura limitada
 
 ### Deep Learning
-- Origem: UFMG
+- Origem: Universidade Federal de Minas Gerais (UFMG)
 - Tipo: Material didático
 - Limitações: conteúdo resumido, dependente de contexto
+
+### Exploring the Power and Practical Applications of K-Nearest Neighbours (KNN) in Machine Learning
+- Origem: Journal of Computer Allied Intelligence (JCAI)
+- Tipo: Artigo científico
+- Limitações: conteúdo em inglês, técnico
+
+### Dissertation – Trinity College Dublin (SCSS, 2020)
+- Origem: Trinity College Dublin – School of Computer Science and Statistics (SCSS)
+- Tipo: Dissertação acadêmica
+- Limitações: conteúdo em inglês, escopo específico do projeto
 
 ### Regressão Logística (gerado por IA)
 - Origem: Conteúdo gerado por Inteligência Artificial
