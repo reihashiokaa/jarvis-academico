@@ -2,7 +2,7 @@
 
 JARVIS Acadêmico é um assistente acadêmico em Python com suporte a LLM, tool calling, gerenciamento de agenda, tarefas e consulta a materiais de estudo com RAG.
 
-O sistema foi desenvolvido para permitir que o usuário interaja em linguagem natural pelo terminal, enquanto a LLM decide quando deve responder diretamente ou acionar uma ferramenta interna do projeto.
+O sistema foi desenvolvido para permitir que o usuário interaja em linguagem natural pelo bot do Telegram, enquanto a LLM decide quando deve responder diretamente ou acionar uma ferramenta interna do projeto.
 
 ## Funcionalidades
 
@@ -34,6 +34,7 @@ jarvis-academico/
 │   ├── tools.py
 │   ├── logger.py
 │   ├── llm_client.py
+│   ├── telegram.py
 │   └── main.py
 │
 ├── testes_terminal/
@@ -48,7 +49,9 @@ jarvis-academico/
 - Python 3.10 ou superior;
 - Ambiente virtual Python;
 - Chave de acesso à API compatível com OpenAI;
-- Arquivos de materiais em `.pdf` ou `.txt` para uso do RAG.
+- Arquivos de materiais em `.pdf` ou `.txt` para uso do RAG;
+- Conta ativa no Telegram para interação com o bot;
+- Acesso ao Telegram Web, aplicativo desktop ou mobile para envio de mensagens ao bot.
 
 ## Instalação
 
@@ -100,23 +103,49 @@ Exemplo:
 GEMMA_API_KEY=sua_chave_aqui
 GEMMA_BASE_URL=url_da_api_aqui
 GEMMA_MODEL=nome_do_modelo_aqui
+
+TOKEN_TELEGRAM=token_telegram_aqui
 ```
 
 O arquivo `.env` não deve ser versionado no Git.
 
 ## Execução
 
-Para iniciar o assistente:
+Para iniciar o programa:
 
 ```bash
 python -m src.main
 ```
 
-Para encerrar o chat:
+Quando a mensagem "Bot integrado e rodando..." aparecer, o bot já estará disponível para interação no Telegram.
+
+Para encerrar o programa, digite o seguinte comando na conversa com o bot:
 
 ```txt
 sair
 ```
+
+## Como acessar o bot no Telegram
+
+Após executar o projeto, aguarde a mensagem "Bot integrado e rodando...".
+
+Em seguida, acesse o Telegram pelo aplicativo ou pelo navegador via `https://web.telegram.org`.
+
+Para localizar o bot, é possível buscá-lo de duas formas:
+
+1. Pelo link:
+```txt
+https://t.me/jarvisAcademico_bot
+```
+
+2. Pelo identificador:
+```txt
+@jarvisAcademico_bot
+```
+
+Encontrado o bot, clique em `Iniciar` ou digite o comando `/start`.
+
+Após isso, o bot já estará pronto para responder e processar solicitações.
 
 ## Agenda acadêmica
 
@@ -204,11 +233,11 @@ Explique regressão logística com base nos materiais
 ```
 
 ```txt
-Explique o padrão Singleton com base nos materiais disponíveis
+Explique o que são embeddings.
 ```
 
 ```txt
-Quais são os principais pontos do padrão Adapter?
+O que é Inteligência Artificial? 
 ```
 
 ## Tool calling
