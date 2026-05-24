@@ -1333,7 +1333,7 @@ def consultar_material_rag(pergunta: str) -> str:
     # Primeiro, recuperamos os chunks mais relevantes para a
     # pergunta do usuário.
     # --------------------------------------------------------
-    chunks_relevantes = recuperar_chunks_relevantes(pergunta, quantidade=3)
+    chunks_relevantes = recuperar_chunks_relevantes(pergunta)
 
     # --------------------------------------------------------
     # Agora formatamos os chunks recuperados em um texto único.
