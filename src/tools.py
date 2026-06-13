@@ -121,6 +121,9 @@ from src.logger import registrar_chamada_ferramenta
 # ------------------------------------------------------------
 from src.rag import consultar_material_rag
 
+
+from src.aprendizado import gerar_exercicios
+
 #endregion
 
 #region carregar_ferramentas_disponiveis (intermediária, retorna dicionário com nomes e funções disponíveis)
@@ -240,7 +243,19 @@ def carregar_ferramentas_disponiveis() -> dict:
         # - recuperar trechos relevantes;
         # - gerar respostas baseadas nesses trechos
         # ----------------------------------------------------
-        "consultar_material_rag": consultar_material_rag
+        "consultar_material_rag": consultar_material_rag,
+
+        # ----------------------------------------------------
+        # Ferramenta relacionada à geração de exercícios baseado
+        # nos materiais de estudo.
+        #
+        # Essa função foi criada no arquivo aprendizado.py.
+        # Ela representa as ações principais exigidas no
+        # Trabalho 1:
+        #
+        # - geração de exercícios (Melhorias de Aprendizado)
+        # ----------------------------------------------------
+        "gerar_exercicios": gerar_exercicios
     }
 
     # --------------------------------------------------------
@@ -748,6 +763,23 @@ def carregar_descricoes_ferramentas() -> list:
             "descricao": "Use quando o usuário fizer perguntas sobre materiais de estudo, PDFs, textos, anotações ou conteúdos carregados no sistema.",
             "parametros": {
                 "pergunta": "Descrição textual de uma pergunta relacionada a materiais de estudo. Exemplo: Explique regressão logística."
+            }
+        },
+
+        # ----------------------------------------------------
+        # Ferramenta: gerar_exercicios
+        #
+        # Essa ferramenta recebe uma solicitação do usuário para
+        # gerar exercícios relacionados a um assunto e retorna
+        # uma lista de exercícios com gabarito baseado nos trechos
+        # recuperados dos materiais de estudo.
+        # ----------------------------------------------------
+        {
+            "nome": "gerar_exercicios",
+            "descricao": "Use quando o usuário pedir para gerar exercícios sobre algum determinado tema relacionado aos materiais de estudo, PDFs, textos, anotações ou conteúdos carregados no sistema. Exemplos: Gere uma lista de exercícios sobre Regressão Logística.",
+            "parametros": {
+                "tema": "Descrição textual do tema (conteúdo) no qual os exercícios irão se basear.",
+                "qtde": "Valor numérico inteiro que determina a quantidade de exercícios que serão gerados. Não precisa ser específicado caso o usuário não defina nenhuma quantidade."
             }
         }
     ]
