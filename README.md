@@ -240,6 +240,64 @@ Explique o que são embeddings.
 O que é Inteligência Artificial? 
 ```
 
+## Melhorias de aprendizado
+
+O projeto implementa funcionalidades voltadas ao apoio ao aprendizado do usuário.
+
+As melhorias implementadas são:
+
+* Geração de exercícios com base nos materiais de estudo;
+* Perguntas ao usuário no formato de active recall.
+
+### Geração de exercícios
+
+A geração de exercícios permite que o usuário solicite uma lista de questões sobre um tema relacionado aos materiais carregados no sistema.
+
+O sistema usa o RAG para recuperar trechos relevantes dos materiais e, em seguida, envia esse contexto para a LLM gerar exercícios com respostas.
+
+Exemplo de uso:
+
+```text
+gere exercícios sobre Inteligência Artificial
+```
+
+ou:
+
+```text
+gere 5 exercícios sobre regressão logística
+```
+
+### Active recall
+
+A funcionalidade de active recall é interativa.
+
+Nesse fluxo, o sistema faz uma pergunta ao usuário, aguarda a resposta e depois avalia o desempenho.
+
+Fluxo geral:
+
+1. O usuário pede para ser testado sobre um tema;
+2. O sistema recupera trechos relevantes dos materiais com RAG;
+3. A LLM gera uma pergunta e uma resposta esperada;
+4. O sistema apresenta apenas a pergunta ao usuário;
+5. O usuário responde usando o formato `resposta: ...`;
+6. O sistema compara a resposta do usuário com a resposta esperada;
+7. O sistema devolve uma avaliação com classificação, feedback, resposta ideal e sugestão de revisão.
+
+Exemplo de uso:
+
+```text
+me faça uma pergunta sobre Inteligência Artificial
+```
+
+Depois que o sistema fizer a pergunta, o usuário pode responder:
+
+```text
+resposta: minha resposta aqui
+```
+
+Essa funcionalidade atende ao requisito de melhoria de aprendizado interativa, pois o sistema pergunta, recebe a resposta do usuário e realiza uma avaliação.
+
+
 ## Tool calling
 
 O sistema utiliza tool calling para permitir que a LLM selecione ferramentas internas conforme a intenção do usuário.
@@ -254,6 +312,9 @@ Ferramentas disponíveis:
 - `adicionar_tarefa`
 - `concluir_tarefa_por_descricao`
 - `consultar_material_rag`
+* `gerar_exercicios`
+* `iniciar_active_recall`
+* `responder_active_recall`
 
 ## Logs
 
