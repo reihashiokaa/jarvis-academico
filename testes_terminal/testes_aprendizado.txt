@@ -1,0 +1,39 @@
+# ============================================================
+# TESTES — aprendizado.py
+# ============================================================
+
+# 01 — Testar carregamento da sessão de active recall
+python -c "from src.aprendizado import carregar_sessao_active_recall; print(carregar_sessao_active_recall())"
+
+# 02 — Testar salvamento da sessão de active recall
+python -c "from src.aprendizado import salvar_sessao_active_recall, carregar_sessao_active_recall; salvar_sessao_active_recall({'tema': 'teste', 'pergunta': 'Pergunta teste?', 'resposta_esperada': 'Resposta teste.', 'contexto': 'Contexto teste.'}); print(carregar_sessao_active_recall())"
+
+# 03 — Testar limpeza da sessão de active recall
+python -c "from src.aprendizado import limpar_sessao_active_recall, carregar_sessao_active_recall; limpar_sessao_active_recall(); print(carregar_sessao_active_recall())"
+
+# 04 — Testar geração de pergunta de active recall com contexto falso
+python -c "from src.aprendizado import gerar_pergunta_active_recall_com_contexto; print(gerar_pergunta_active_recall_com_contexto('Python', 'Python é uma linguagem de programação muito usada em automação, ciência de dados e inteligência artificial.'))"
+
+# 05 — Testar interpretação da pergunta de active recall
+python -c "from src.aprendizado import interpretar_pergunta_active_recall; import json; texto=json.dumps({'pergunta':'O que é Python?','resposta_esperada':'Python é uma linguagem de programação.'}, ensure_ascii=False); print(interpretar_pergunta_active_recall(texto))"
+
+# 06 — Testar início de uma sessão de active recall
+python -c "from src.aprendizado import iniciar_active_recall; print(iniciar_active_recall('Inteligência Artificial'))"
+
+# 07 — Testar avaliação de resposta de active recall com dados falsos
+python -c "from src.aprendizado import avaliar_resposta_active_recall_com_contexto; print(avaliar_resposta_active_recall_com_contexto('O que é Python?', 'Python é uma linguagem de programação.', 'Python é uma linguagem usada para programar e fazer IA.', 'Python é uma linguagem de programação usada em automação, ciência de dados e inteligência artificial.'))"
+
+# 08 — Testar resposta da sessão ativa de active recall
+python -c "from src.aprendizado import responder_active_recall; print(responder_active_recall('resposta: sistemas que pensam como humanos, sistemas que agem como humanos, sistemas que pensam racionalmente e sistemas que agem racionalmente'))"
+
+# 09 — Testar decisão da LLM para iniciar active recall
+python -c "from src.llm_client import decidir_chamada_ferramenta; from src.tools import carregar_descricoes_ferramentas; print(decidir_chamada_ferramenta('me faça uma pergunta sobre Inteligência Artificial', carregar_descricoes_ferramentas()))"
+
+# 10 — Testar decisão da LLM para responder active recall
+python -c "from src.llm_client import decidir_chamada_ferramenta; from src.tools import carregar_descricoes_ferramentas; print(decidir_chamada_ferramenta('resposta: sistemas que pensam como humanos, sistemas que agem como humanos, sistemas que pensam racionalmente e sistemas que agem racionalmente', carregar_descricoes_ferramentas()))"
+
+# 11 — Testar execução da ferramenta iniciar_active_recall via tools.py
+python -c "from src.tools import executar_ferramenta; print(executar_ferramenta('iniciar_active_recall', {'tema': 'Inteligência Artificial'}))"
+
+# 12 — Testar execução da ferramenta responder_active_recall via tools.py
+python -c "from src.tools import executar_ferramenta; print(executar_ferramenta('responder_active_recall', {'resposta_usuario': 'resposta: sistemas que pensam racionalmente se preocupam com o raciocínio lógico correto; sistemas que atuam racionalmente se preocupam em escolher ações corretas para alcançar objetivos.'}))"
