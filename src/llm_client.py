@@ -486,6 +486,16 @@ O JSON deve seguir exatamente este formato:
 
 Regras:
 
+0. REGRA PRIORITÁRIA: se a mensagem do usuário começar com "resposta:", use obrigatoriamente a ferramenta "responder_active_recall".
+
+A entrada deve ser:
+
+{{
+ "resposta_usuario": "mensagem completa enviada pelo usuário"
+}}
+
+Não trate mensagens que começam com "resposta:" como conversa comum. Elas devem ser avaliadas como resposta de active recall.
+
 1. Se a mensagem do usuário puder ser respondida melhor usando agenda, tarefas ou materiais, use uma ferramenta.
 
 2. Se o usuário quiser ver tarefas, use "consultar_tarefas".
@@ -493,6 +503,31 @@ Regras:
 3. Se o usuário quiser adicionar/criar/anotar uma tarefa, use "adicionar_tarefa".
 
 4. Se o usuário quiser concluir, finalizar, marcar como feita ou dizer que terminou uma tarefa, use "concluir_tarefa_por_descricao".
+
+5. Se o usuário quiser gerar exercícios, questões, lista de exercícios, perguntas de treino ou simulado sobre algum tema, use "gerar_exercicios".
+
+A entrada deve ser:
+
+{{
+ "tema": "tema pedido pelo usuário",
+ "qtde": quantidade de exercícios, se o usuário informar; caso contrário, null
+}}
+
+6. Se o usuário quiser ser testado, treinar active recall, receber uma pergunta, responder perguntas ou pedir algo como "me faça uma pergunta sobre...", use "iniciar_active_recall".
+
+A entrada deve ser:
+
+{{
+ "tema": "tema sobre o qual o usuário quer ser testado"
+}}
+
+7. Se o usuário estiver respondendo uma pergunta de active recall, especialmente se a mensagem começar com "resposta:", use "responder_active_recall".
+
+A entrada deve ser:
+
+{{
+ "resposta_usuario": "resposta completa enviada pelo usuário"
+}}
 
 A entrada deve ser:
 

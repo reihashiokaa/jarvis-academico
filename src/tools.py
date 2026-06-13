@@ -122,7 +122,11 @@ from src.logger import registrar_chamada_ferramenta
 from src.rag import consultar_material_rag
 
 
-from src.aprendizado import gerar_exercicios
+from src.aprendizado import (
+    gerar_exercicios,
+    iniciar_active_recall,
+    responder_active_recall
+)
 
 #endregion
 
@@ -255,7 +259,9 @@ def carregar_ferramentas_disponiveis() -> dict:
         #
         # - geração de exercícios (Melhorias de Aprendizado)
         # ----------------------------------------------------
-        "gerar_exercicios": gerar_exercicios
+        "gerar_exercicios": gerar_exercicios,
+        "iniciar_active_recall": iniciar_active_recall,
+        "responder_active_recall": responder_active_recall
     }
 
     # --------------------------------------------------------
@@ -780,6 +786,61 @@ def carregar_descricoes_ferramentas() -> list:
             "parametros": {
                 "tema": "Descrição textual do tema (conteúdo) no qual os exercícios irão se basear.",
                 "qtde": "Valor numérico inteiro que determina a quantidade de exercícios que serão gerados. Não precisa ser específicado caso o usuário não defina nenhuma quantidade."
+            }
+        },
+
+            # ----------------------------------------------------
+        # Ferramenta: iniciar_active_recall
+        #
+        # Essa ferramenta inicia uma sessão interativa de estudo.
+        #
+        # Ela deve ser usada quando o usuário quiser que o sistema
+        # faça uma pergunta sobre algum tema.
+        #
+        # Exemplo de intenção do usuário:
+        #
+        # - "me faça uma pergunta sobre Inteligência Artificial"
+        # - "quero treinar active recall sobre RAG"
+        # - "me teste sobre regressão logística"
+        # - "faça uma pergunta para eu responder"
+        # ----------------------------------------------------
+
+        {
+            "nome": "iniciar_active_recall",
+
+            "descricao": "Use quando o usuário pedir para ser testado, quiser treinar active recall, pedir uma pergunta sobre um tema ou quiser que o sistema faça uma pergunta para ele responder.",
+
+            "parametros": {
+                "tema": "Tema ou conteúdo sobre o qual a pergunta de active recall deve ser gerada. Exemplo: Inteligência Artificial."
+            }
+        },
+
+        # ----------------------------------------------------
+        # Ferramenta: responder_active_recall
+        #
+        # Essa ferramenta avalia a resposta do usuário para uma
+        # pergunta de active recall feita anteriormente.
+        #
+        # Ela deve ser usada quando o usuário estiver respondendo
+        # uma pergunta ativa.
+        #
+        # Para facilitar a identificação, orientamos o usuário a
+        # responder usando:
+        #
+        # resposta: texto da resposta
+        #
+        # Exemplo:
+        #
+        # "resposta: sistemas que pensam como humanos..."
+        # ----------------------------------------------------
+
+        {
+            "nome": "responder_active_recall",
+
+            "descricao": "Use quando o usuário responder uma pergunta de active recall feita anteriormente. Normalmente a mensagem começa com 'resposta:' ou indica que ele está tentando responder à pergunta feita pelo sistema.",
+
+            "parametros": {
+                "resposta_usuario": "Resposta textual enviada pelo usuário para a pergunta de active recall."
             }
         }
     ]

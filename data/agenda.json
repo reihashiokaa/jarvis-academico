@@ -12,5 +12,12 @@
     "hora": "19:00",
     "tipo": "aula",
     "descricao": "Aula sobre camada de enlace"
+  },
+  {
+    "titulo": "Entrega do trabalho de IA",
+    "data": "2026-05-24",
+    "hora": "23:59",
+    "tipo": "trabalho",
+    "descricao": "Envio do trabalho de inteligência artificial"
   }
 ]
