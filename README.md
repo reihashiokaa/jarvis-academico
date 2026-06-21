@@ -1,18 +1,21 @@
 # JARVIS Acadêmico
 
-JARVIS Acadêmico é um assistente acadêmico em Python com suporte a LLM, tool calling, gerenciamento de agenda, tarefas e consulta a materiais de estudo com RAG.
+JARVIS Acadêmico é um assistente acadêmico em Python com suporte a LLM, tool calling, gerenciamento de agenda, tarefas, consulta a materiais de estudo com RAG e funcionalidades de apoio ao aprendizado.
 
 O sistema foi desenvolvido para permitir que o usuário interaja em linguagem natural pelo bot do Telegram, enquanto a LLM decide quando deve responder diretamente ou acionar uma ferramenta interna do projeto.
 
 ## Funcionalidades
 
-- Chat acadêmico com LLM;
-- Consulta de agenda acadêmica;
-- Gerenciamento de tarefas;
-- Conclusão de tarefas por descrição textual;
-- Consulta a materiais com RAG;
-- Tool calling com decisão feita pela LLM;
-- Registro de chamadas de ferramentas em log.
+* Chat acadêmico com LLM;
+* Consulta de agenda acadêmica;
+* Gerenciamento de tarefas;
+* Conclusão de tarefas por descrição textual;
+* Consulta a materiais com RAG;
+* Geração de exercícios com base nos materiais;
+* Active recall com pergunta, resposta do usuário e avaliação automática;
+* Tool calling com decisão feita pela LLM;
+* Registro de chamadas de ferramentas em log;
+* Avaliação do sistema com perguntas, documentos recuperados, respostas e análise de erros.
 
 ## Estrutura do projeto
 
@@ -22,6 +25,7 @@ jarvis-academico/
 ├── data/
 │   ├── agenda.json
 │   ├── tarefas.json
+│   ├── active_recall.json
 │   └── materiais/
 │
 ├── logs/
@@ -29,6 +33,7 @@ jarvis-academico/
 │
 ├── src/
 │   ├── agenda.py
+│   ├── aprendizado.py
 │   ├── tarefas.py
 │   ├── rag.py
 │   ├── tools.py
@@ -39,26 +44,29 @@ jarvis-academico/
 │
 ├── testes_terminal/
 │
+├── AVALIACAO_SISTEMA.md
 ├── requirements.txt
 ├── README.md
 └── .env
 ```
 
+O arquivo `data/active_recall.json` é usado para guardar temporariamente a sessão ativa de active recall. Ele é gerado durante a execução do sistema.
+
 ## Requisitos
 
-- Python 3.10 ou superior;
-- Ambiente virtual Python;
-- Chave de acesso à API compatível com OpenAI;
-- Arquivos de materiais em `.pdf` ou `.txt` para uso do RAG;
-- Conta ativa no Telegram para interação com o bot;
-- Acesso ao Telegram Web, aplicativo desktop ou mobile para envio de mensagens ao bot.
+* Python 3.10 ou superior;
+* Ambiente virtual Python;
+* Chave de acesso a uma API compatível com OpenAI;
+* Arquivos de materiais em `.pdf` ou `.txt` para uso do RAG;
+* Conta ativa no Telegram para interação com o bot;
+* Acesso ao Telegram Web, aplicativo desktop ou mobile para envio de mensagens ao bot.
 
 ## Instalação
 
 Clone o repositório:
 
 ```bash
-git clone <https://github.com/reihashiokaa/jarvis-academico>
+git clone https://github.com/reihashiokaa/jarvis-academico
 ```
 
 Acesse a pasta do projeto:
@@ -95,17 +103,19 @@ pip install -r requirements.txt
 
 ## Configuração
 
-Crie um arquivo `.env` na raiz do projeto com as variáveis de ambiente necessárias para acessar a LLM.
+Crie um arquivo `.env` na raiz do projeto com as variáveis de ambiente necessárias para acessar a LLM e o bot do Telegram.
 
 Exemplo:
 
 ```txt
 GEMMA_API_KEY=sua_chave_aqui
-GEMMA_BASE_URL=url_da_api_aqui
+GEMMA_BASE_URL=url_da_api_compativel_openai_aqui
 GEMMA_MODEL=nome_do_modelo_aqui
 
 TOKEN_TELEGRAM=token_telegram_aqui
 ```
+
+As variáveis mantêm o prefixo `GEMMA_` por compatibilidade com o código, mas podem apontar para outra API compatível com OpenAI.
 
 O arquivo `.env` não deve ser versionado no Git.
 
@@ -134,11 +144,13 @@ Em seguida, acesse o Telegram pelo aplicativo ou pelo navegador via `https://web
 Para localizar o bot, é possível buscá-lo de duas formas:
 
 1. Pelo link:
+
 ```txt
 https://t.me/jarvisAcademico_bot
 ```
 
 2. Pelo identificador:
+
 ```txt
 @jarvisAcademico_bot
 ```
@@ -153,10 +165,10 @@ A agenda permite consultar compromissos cadastrados em `data/agenda.json`.
 
 Consultas disponíveis:
 
-- compromissos de hoje;
-- compromissos de amanhã;
-- compromissos da semana atual;
-- compromissos por data específica.
+* compromissos de hoje;
+* compromissos de amanhã;
+* compromissos da semana atual;
+* compromissos por data específica.
 
 Exemplos:
 
@@ -182,9 +194,9 @@ As tarefas são armazenadas em `data/tarefas.json`.
 
 Funcionalidades disponíveis:
 
-- listar tarefas;
-- adicionar tarefas;
-- concluir tarefas por descrição textual.
+* listar tarefas;
+* adicionar tarefas;
+* concluir tarefas por descrição textual.
 
 Exemplos:
 
@@ -212,8 +224,8 @@ data/materiais
 
 Formatos suportados:
 
-- `.pdf`
-- `.txt`
+* `.pdf`
+* `.txt`
 
 Fluxo geral do RAG:
 
@@ -237,7 +249,7 @@ Explique o que são embeddings.
 ```
 
 ```txt
-O que é Inteligência Artificial? 
+O que é Inteligência Artificial?
 ```
 
 ## Melhorias de aprendizado
@@ -257,13 +269,13 @@ O sistema usa o RAG para recuperar trechos relevantes dos materiais e, em seguid
 
 Exemplo de uso:
 
-```text
+```txt
 gere exercícios sobre Inteligência Artificial
 ```
 
 ou:
 
-```text
+```txt
 gere 5 exercícios sobre regressão logística
 ```
 
@@ -285,18 +297,17 @@ Fluxo geral:
 
 Exemplo de uso:
 
-```text
+```txt
 me faça uma pergunta sobre Inteligência Artificial
 ```
 
 Depois que o sistema fizer a pergunta, o usuário pode responder:
 
-```text
+```txt
 resposta: minha resposta aqui
 ```
 
 Essa funcionalidade atende ao requisito de melhoria de aprendizado interativa, pois o sistema pergunta, recebe a resposta do usuário e realiza uma avaliação.
-
 
 ## Tool calling
 
@@ -304,17 +315,35 @@ O sistema utiliza tool calling para permitir que a LLM selecione ferramentas int
 
 Ferramentas disponíveis:
 
-- `consultar_agenda_por_data`
-- `consultar_agenda_hoje`
-- `consultar_agenda_amanha`
-- `consultar_agenda_semana_atual`
-- `consultar_tarefas`
-- `adicionar_tarefa`
-- `concluir_tarefa_por_descricao`
-- `consultar_material_rag`
+* `consultar_agenda_por_data`
+* `consultar_agenda_hoje`
+* `consultar_agenda_amanha`
+* `consultar_agenda_semana_atual`
+* `consultar_tarefas`
+* `adicionar_tarefa`
+* `concluir_tarefa_por_descricao`
+* `consultar_material_rag`
 * `gerar_exercicios`
 * `iniciar_active_recall`
 * `responder_active_recall`
+
+## Avaliação do sistema
+
+A avaliação do sistema está documentada no arquivo:
+
+```txt
+AVALIACAO_SISTEMA.md
+```
+
+Esse documento contém:
+
+* 10 perguntas feitas ao sistema;
+* documentos recuperados pelo RAG;
+* resposta gerada pela LLM;
+* classificação da resposta como correta, parcialmente correta ou incorreta;
+* análise de erros identificados durante a avaliação.
+
+A avaliação mostrou que o sistema responde melhor quando os documentos recuperados estão diretamente relacionados à pergunta. Também foram observadas limitações quando a base de conhecimento não possui material específico sobre o tema solicitado.
 
 ## Logs
 
@@ -326,10 +355,10 @@ logs/tool_calls.jsonl
 
 Cada registro contém:
 
-- data e hora;
-- ferramenta chamada;
-- entrada recebida;
-- saída devolvida.
+* data e hora;
+* ferramenta chamada;
+* entrada recebida;
+* saída devolvida.
 
 ## Testes
 
@@ -341,13 +370,15 @@ testes_terminal/
 
 Os arquivos dessa pasta incluem testes para:
 
-- agenda;
-- tarefas;
-- logger;
-- tools;
-- LLM;
-- main;
-- RAG.
+* agenda;
+* tarefas;
+* logger;
+* tools;
+* LLM;
+* main;
+* RAG;
+* geração de exercícios;
+* active recall.
 
 Exemplos:
 
@@ -363,14 +394,18 @@ python -c "from src.tarefas import consultar_tarefas; print(consultar_tarefas())
 python -c "from src.rag import consultar_material_rag; print(consultar_material_rag('Explique regressão logística com base nos materiais'))"
 ```
 
+```bash
+python -c "from src.aprendizado import iniciar_active_recall; print(iniciar_active_recall('Inteligência Artificial'))"
+```
+
 ## Dependências principais
 
-- `openai`
-- `python-dotenv`
-- `pypdf`
-- `sentence-transformers`
-- `scikit-learn`
-- `numpy`
+* `openai`
+* `python-dotenv`
+* `pypdf`
+* `sentence-transformers`
+* `scikit-learn`
+* `numpy`
 
 As dependências completas estão em `requirements.txt`.
 
@@ -378,8 +413,8 @@ As dependências completas estão em `requirements.txt`.
 
 Durante o desenvolvimento do projeto, foram utilizadas as seguintes IAs:
 
-- Gemma 12B: modelo principal usado pelo assistente;
-- ChatGPT: apoio ao desenvolvimento, depuração, organização do código, documentação e revisão das funcionalidades.
+* Qwen2.5-14B-Instruct-AWQ: modelo usado pelo assistente por meio de API compatível com OpenAI;
+* ChatGPT: apoio ao desenvolvimento, depuração, organização do código, documentação e revisão das funcionalidades.
 
 ## Observações
 
@@ -395,5 +430,5 @@ Projeto desenvolvido para a disciplina de Inteligência Artificial.
 
 Integrantes:
 
-- Amanda Ayumi Koga Kikuta
-- Reinaldo Andrade Hashioka
+* Amanda Ayumi Koga Kikuta
+* Reinaldo Andrade Hashioka
