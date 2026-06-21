@@ -154,7 +154,7 @@ client = OpenAI(
     # Definir um timeout é importante para evitar que o sistema fique travado esperando uma resposta que pode nunca chegar.
     # O valor de 10 segundos é um exemplo, mas pode ser ajustado conforme necessário.
     # ---------------------------------------------------------
-    timeout=20
+    timeout=30
 )
 #endregion
 

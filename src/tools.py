@@ -125,7 +125,8 @@ from src.rag import consultar_material_rag
 from src.aprendizado import (
     gerar_exercicios,
     iniciar_active_recall,
-    responder_active_recall
+    responder_active_recall,
+    planejamento_de_estudos
 )
 
 #endregion
@@ -261,7 +262,8 @@ def carregar_ferramentas_disponiveis() -> dict:
         # ----------------------------------------------------
         "gerar_exercicios": gerar_exercicios,
         "iniciar_active_recall": iniciar_active_recall,
-        "responder_active_recall": responder_active_recall
+        "responder_active_recall": responder_active_recall,
+        "planejamento_de_estudos": planejamento_de_estudos
     }
 
     # --------------------------------------------------------
@@ -841,6 +843,14 @@ def carregar_descricoes_ferramentas() -> list:
 
             "parametros": {
                 "resposta_usuario": "Resposta textual enviada pelo usuário para a pergunta de active recall."
+            }
+        },
+
+        {
+            "nome": "planejamento_de_estudos",
+            "descricao": "Use quando o usuário solicitar a criação de um plano de estudos ou orientação sobre o que estudar, desde que envolva planejamento. Deve ser utilizada em solicitações como organização de estudos para provas, trabalhos ou definição de prioridades diárias. Exemplos: 'Monte um plano de estudos para a prova', 'O que devo priorizar hoje?'. Não deve ser usada para dúvidas pontuais ou explicações teóricas sem necessidade de planejamento.'",
+            "parametros": {
+                "pedido": "Descrição textual da solicitação do usuário.",
             }
         }
     ]

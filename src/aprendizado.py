@@ -63,6 +63,22 @@
 
 import json
 
+
+# ------------------------------------------------------------
+# Importamos a biblioteca re.
+#
+# Ela é uma biblioteca padrão utilizada para trabalhar com
+# expressões regulares, isto é, sequências especiais de
+# caracteres que definem um formato fixo, como por exemplo
+# '\{4}' que descreve a regra: "procure exatamente quatro
+# números que estejam juntos".
+#
+# Essa biblioteca permitirá que um determinado padrão seja
+# encontrado em uma string e possivelmente substituído por
+# outro valor.
+# ------------------------------------------------------------
+import re
+
 # ------------------------------------------------------------
 # Importamos a classe Path.
 # ------------------------------------------------------------
@@ -119,6 +135,12 @@ from src.llm_client import chamar_llm
 # tornando-os mais legíveis e organizados.
 # ------------------------------------------------------------
 from src.rag import recuperar_chunks_relevantes, formatar_chunks_recuperados
+
+
+from src.agenda import consultar_agenda_semana_atual, obter_data_hoje
+
+
+from src.tarefas import consultar_tarefas, adicionar_tarefa
 
 
 #endregion
@@ -1276,3 +1298,198 @@ def gerar_exercicios(tema: str, qtde:int=None):
     # --------------------------------------------------------
     return resposta
 #endregion
+
+def extrair_json(texto):
+    match = re.search(r"\{.*\}", texto, re.DOTALL)
+
+    if match:
+        string_json_limpa = match.group(0)
+
+    else:
+        string_json_limpa = "Nenhum JSON foi encontrado no texto."
+
+    return string_json_limpa
+
+def planejamento_de_estudos (pedido):
+
+    agenda = consultar_agenda_semana_atual()
+    
+    tarefas = consultar_tarefas()
+
+    prompt = f"""
+    Você é o JARVIS Acadêmico, um assistente de estudos.
+
+    Gere os temas que deverão ser estudados de acordo com a solicitação e a agenda do usuário.
+
+    Observa-se:
+
+    - Se a solicitação não apresentar informações o suficiente ou for muito ambiguo, não invente,
+    retorne uma string vazia;
+    - A solicitação pode ser considerada ambigua ou com falta de informações caso o usuário peça
+    para gerar um plano de estudos sobre algo que não é possível verificar ou confirmar o conteúdo
+    que deverá ser estudado. Por exemplo, um caso onde o usuário peça para gerar o plano de estudos
+    para uma prova, mas não informa o conteúdo que será cobrado e tal compromisso também não aparece
+    na agenda ou se aparece não apresenta em nenhum lugar o que será cobrado, então não é possível
+    determinar o conteúdo que deverá ser estudado para montar o plano de estudos. Outro exemplo,
+    se ele peguntar 'O que deve priorizar hoje?' e na agenda tem um compromisso como prova, trabalho ou
+    do tipo e o qual é possível determinar o conteúdo que será estudado, então é possível montar o
+    plano de estudos;
+    - Solicitações que não envolvam um compromisso, mas que estão relacionados ao planejamento de estudos
+    são permitidas, desde de que definem algum conteúdo para ser estudado. Exemplo: 'Monte um plano de estudos
+    sobre embeddings densos';
+    - Conteúdo (como em siglas) que podem significar várias coisas são considerados como ambiguas.
+
+    A resposta deverá ser textual (string) e seguir o formato do exemplo abaixo:
+
+    'Regressão Logística, Regressão Linear e Embeddings'
+
+    IMPORTANTE: A resposta retornada consistirá apenas dos temas que deverão ser estudados! Não inclua suas observações.
+
+    Compromissos do usuário:
+
+    {agenda}
+
+    Solicitação do usuário:
+
+    {pedido}
+    """
+
+    tema = chamar_llm(prompt)
+
+    if not tema or len(tema) == 0:
+        return (
+            "Não foi possível determinar o conteúdo que deverá ser estudado."
+        )
+
+    chunks = recuperar_chunks_relevantes(tema)
+
+    contexto = formatar_chunks_recuperados(chunks)
+
+    if not contexto or len(contexto) == 0:
+        return (
+            "Não encontrei trechos relevantes nos materiais para responder essa pergunta."
+        )
+    
+    data_atual = obter_data_hoje()
+
+    prompt = f"""
+    Você é o JARVIS Acadêmico, um assistente de estudos.
+
+    Gere um plano de estudos de acordo com a solicitação do usuário, utilizando como referência
+    apenas ou principalmente os compromissos da agenda, as tarefas pendentes e os materiais (contexto)
+    fornecidos abaixo.
+
+    Data atual:
+
+    {data_atual}
+
+    Compromissos (agenda) do usuário:
+
+    {agenda}
+
+    Tarefas do usuário:
+
+    {tarefas}
+
+    Trechos dos materiais (contexto):
+
+    {contexto}
+
+    Solicitação do usuário:
+
+    {pedido}
+
+    Observa-se:
+
+    - Um plano de estudos consiste em um conjunto de tarefas que deverão ser capazes de auxiliar/guiar os estudos do usuário;
+    - Se não for especificado um compromisso ou tarefa ou for muito ambiguo como 'Monte um plano de estudos para a prova' (qual prova?),
+    monte um plano de estudos para o compromisso mais próximo da data atual, desde de que esse compromisso necessite de estudos.
+    Por exemplo, um compromisso como 'Academia' não requer de um plano de estudos. Além disso, esse compromisso deve ter relação com a solicitação
+    do usuário, se o usuário pediu o plano para uma prova, mesmo que tenha um compromisso mais próximo relacionado a algum trabalho, o foco ainda
+    será o compromisso da prova;
+    - Antes de gerar qualquer tarefa, compare com todas as tarefas já existentes (tarefas do usuário) e com as tarefas que você já gerou neste plano;
+    - Considere tarefas duplicadas aquelas que possuem o mesmo objetivo, mesmo que com palavras diferentes;
+    - Uma tarefa segue o formato exemplificado abaixo, mas deverá apenas ser informato os campos do 'titulo' e 'descricao', visto
+    que 'id' e 'concluida' serão gerados pelo próprio sistema;
+    
+    "id": 1,
+    "titulo": "Estudar RAG",
+    "descricao": "Revisar chunking e embeddings para a prova de IA. Materiais recomendados: exemplo1.pdf e exemplo2.pdf",
+    "concluida": false
+
+    - Se não houver informações o suficiente para gerar o plano de estudos, não invente, informe que não foi possível gerar o plano de
+    estudos por conta da falta de informações ou por ser muito ambiguo. A solicitação pode ser considerada ambigua
+    ou com falta de informações caso o usuário peça para gerar um plano de estudos sobre algo que não é possível verificar ou confirmar
+    o conteúdo que deverá ser estudado. Por exemplo, um caso onde o usuário peça para gerar o plano de estudos para uma prova, mas
+    não informa o conteúdo que será cobrado e tal compromisso também não aparece na agenda ou se aparece não apresenta em nenhum lugar
+    o que será cobrado, então não é possível determinar o conteúdo que deverá ser estudado para montar o plano de estudos.
+    Outro exemplo, se ele peguntar 'O que deve priorizar hoje?' e na agenda tem um compromisso como prova, trabalho ou do tipo e o qual
+    é possível determinar o conteúdo que será estudado, então é possível montar o plano de estudos;
+    - Na descrição da tarefa, descreva brevemente o que deverá ser estudado ou o foco principal;
+    - Se possível, não é obrigatório, adicione na descrição o título dos materiais recomendados para o estudo, não invente materiais caso não houver,
+    baseia-se apenas nos arquivos que foram indicados no contexto dos trechos recuperados dos materiais. Se não houver materiais disponíveis,
+    não indique nenhuma recomendação;
+    - Se você não sabe o conteúdo de algum material, não atribua e nem recomende tal material para estudo;
+    - Não atribua compromissos inexistentes para as tarefas. Apenas atribua caso exista e faça sentido no contexto da solicitação do usuário;
+    - Se não for possível determinar o conteúdo que deverá ser estudado, não invente, mesmo que apresente trechos (contexto) recuperados
+    dos materiais, visto que esses trechos podem estar enganados;
+    - A resposta que deverá ser retornada será composta pelos seguintes itens:
+
+    "plano": "O plano de estudo formatado como string, de forma legível e organizada para que o usuário possa entender"
+    "tarefas": "Lista de tarefas do plano de estudos que deverá seguir o seguinte formato de um dicionário (para cada tarefa): 
+        "titulo": "Título principal da tarefa.",
+        "descricao": "Descrição opcional da tarefa. Se não houver descrição, use uma string vazia. Caso contrário siga a especificação mencionada anteriormente."
+    "
+
+    - Se não for possível gerar o plano de estudo pelos motivos mencionados anteriormente, retorne a lista de tarefas vazia e no campo 'plano' o motivo pelo qual
+    não foi possível;
+    - Nunca inclua tarefas duplicadas na saída final;
+    - Não inclua conteúdos fora da solicitação do usuário;
+    - Não inclua conteúdos relacionados, adjacentes ou avançados que não foram explicitamente pedidos;
+    - Caso o contexto contenha informações fora do tema, ignore completamente essas partes;
+    - O contexto é apenas complementar e não define o conteúdo principal;
+    - Por exemplo, se o tema for "Regressão Logística", não incluir redes neurais, embeddings, deep learning ou outros tópicos;
+    - A resposta gerada deverá ser obrigatoriamente formatada como JSON, então a descrição do que foi elaborado, bem como o plano de estudos e outras informações deverão vir
+    completamente dentro do campo 'plano'! Não esqueça de incluir o plano de estudos no campo 'plano' seguindo o formato exemplificado abaixo:
+
+    
+    Plano de Estudos
+
+    Objetivo Principal:
+    Estudar e revisar o conceito de RAG, focando especificamente em chunking e embeddings.
+
+    Tarefas Propostas:
+
+    1. Título
+    - Descrição: Revisar a teoria sobre x assunto.
+    - Materiais Recomendados: arquivo1.pdf e arquivo2.pdf
+
+    2. Título
+    - Descrição: Praticar exercícos sobre tal assunto.
+    """
+
+    resposta = chamar_llm(prompt)
+
+    if not resposta or len(resposta) == 0:
+        return (
+            "Não foi possível gerar um plano de estudos."
+        )
+
+    resposta_json = extrair_json(resposta)
+
+    try:
+        dados = json.loads(resposta_json)
+    except:
+        return (
+            "Não foi possível extrair os dados da resposta."
+        )
+
+    if not dados.get("tarefas"):
+        return (
+            dados.get("plano")
+        )
+    
+    for tarefa in dados.get("tarefas"):
+        adicionar_tarefa(tarefa.get("titulo"), tarefa.get("descricao"))
+    
+    return dados.get("plano")
