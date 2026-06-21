@@ -40,5 +40,41 @@
     "titulo": "revisar o projeto jarvis",
     "descricao": "",
     "concluida": true
+  },
+  {
+    "id": 8,
+    "titulo": "Estudar embeddings",
+    "descricao": "Revisar a teoria sobre embeddings, sua definição e seu uso em sistemas de aprendizado de máquina. Materiais recomendados: What_are_embeddings.pdf",
+    "concluida": false
+  },
+  {
+    "id": 9,
+    "titulo": "Aplicar conhecimento sobre embeddings",
+    "descricao": "Praticar exercícios relacionados à criação e utilização de embeddings em diferentes contextos de aprendizado de máquina. Materiais recomendados: What_are_embeddings.pdf",
+    "concluida": false
+  },
+  {
+    "id": 10,
+    "titulo": "Analisar exemplos de embeddings",
+    "descricao": "Analisar exemplos práticos de embeddings e seus usos em projetos de aprendizado de máquina. Materiais recomendados: What_are_embeddings.pdf, Ranking_de_Dimensiones_en_Vectores_Densos_para_Recuperación_Eficiente.pdf",
+    "concluida": false
+  },
+  {
+    "id": 11,
+    "titulo": "Revisar a teoria sobre embeddings",
+    "descricao": "Revisar a teoria sobre embeddings, sua definição e seu uso em sistemas de aprendizado de máquina. Materiais recomendados: What_are_embeddings.pdf",
+    "concluida": false
+  },
+  {
+    "id": 12,
+    "titulo": "Aplicar conhecimento sobre embeddings",
+    "descricao": "Praticar exercícios relacionados à criação e utilização de embeddings em diferentes contextos de aprendizado de máquina. Materiais recomendados: What_are_embeddings.pdf",
+    "concluida": false
+  },
+  {
+    "id": 13,
+    "titulo": "Analisar exemplos de embeddings",
+    "descricao": "Analisar exemplos práticos de embeddings e seus usos em projetos de aprendizado de máquina. Materiais recomendados: What_are_embeddings.pdf, Ranking_de_Dimensiones_en_Vectores_Densos_para_Recuperación_Eficiente.pdf",
+    "concluida": false
   }
 ]
